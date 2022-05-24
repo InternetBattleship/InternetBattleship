@@ -13,39 +13,61 @@ import java.net.SocketException;
 import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
-import java.util.Scanner;
 
+// This class should facilitate all network connection making and destroying to/from opponents.
 public class NetworkManager {
 	
+	// Net Users
 	private NetUser self = new NetUser(), opponent = null;
 	public NetUser getMyNetUser() { return self; }
 	public NetUser getOpponentNetUser() { return opponent; }
 	
-	private ArrayList<Listener> listeners = new ArrayList<Listener>();
-	public void addListener(Listener l) { listeners.add(0, l); }
+	// LISTENERS
+	private ArrayList<Listener> listeners = new ArrayList<Listener>(); // List
+	// Add/remove
+	public void addListener(Listener l) { listeners.add(0, l); } 
 	public boolean removeListener(Listener l) { return listeners.remove(l); }
+	// Invoking
 	public void invokeListeners(ListenerInvoker li) {
 		for (int i=listeners.size()-1;i>=0;i--) li.invoke(listeners.get(i));
 	}
 	private interface ListenerInvoker {
 		public void invoke(Listener l);
 	}
-	public interface Listener {
-		public void connectionAttained(Socket s);
+	public interface Listener { // Listener outline
+		// Connection
+		public void connectionAttained(Socket s); // Connection received or initiated
 		public void connectionClosed(Socket s);
-		public void beganListening();
+		// Server/port listening
+		public void beganListening(); // Server listening for incoming
 		public void stoppedListening();
+		// Errors:
 		public void refusedConnection(InetSocketAddress a);
 		public void unresolvedAddress(InetSocketAddress a);
 		public void connectionTimeout(InetSocketAddress a, int toMs);
+		// Messaging
 		public void netMessageReceived(NetMessage nm);
 	}
+
+	public String getStatusString() { // Displayed on UI
+		if (isListening()) return "Listening at " + getLocalIPString() + ":" + getListenPort();
+		if (isConnected()) return "Connected to " + opponent;
+		return "Inactive";
+	}
 	
-	private ObjectInputStream ois;
+	// MESSAGING: TODO: Seperate message handling into its own seperate class
 	private Thread inputThread;
+	private ObjectInputStream ois;
 	private ObjectOutputStream oos;
-	
-	private void getStreams() {
+	public void sendNetMessage(NetMessage nm) { // Send a message through object stream to the opponent
+		if (!isConnected()) throw new IllegalStateException("Not connected!");
+		try {
+			oos.writeObject(nm);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+	private void makeStreams() { // Construct streams from general connection socket
 		if (!isConnected()) throw new IllegalStateException("Not connected!");
 		try {
 			oos = new ObjectOutputStream(socket.getOutputStream());
@@ -90,50 +112,12 @@ public class NetworkManager {
 		}
 	}
 	
-	public void sendNetMessage(NetMessage nm) {
-		if (!isConnected()) throw new IllegalStateException("Not connected!");
-		try {
-			oos.writeObject(nm);
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-	}
-	
-	public String getStatusString() {
-		if (isListening()) return "Listening at " + getLocalIPString() + ":" + getListenPort();
-//		if (isConnected()) return "Connected to " + socket.getInetAddress() + ":" + socket.getPort() + " from port " + socket.getLocalPort();
-		if (isConnected()) return "Connected to " + opponent;
-		return "Inactive";
-	}
-	
+	// GENERAL CONNECTION MANAGEMENT: TODO: Seperate general connection into a seperate class
 	public boolean isConnected() {
 		return socket != null && socket.isConnected() && (!socket.isClosed());
 	}
-	
-	private boolean listening = false;
-	public boolean isListening() {
-		return (!isConnected()) && server != null && listening;
-	}
-	
-	public ServerSocket server;
-	public Socket socket;
-	public Thread promptThread, listenerThread;
-	public Scanner in;
-	
-	public int getListenPort() {
-		return server.getLocalPort();
-	}
-	
-	public String getLocalIPString() {
-		try {
-			return Inet4Address.getLocalHost().getHostAddress().toString();
-		} catch(Exception e) {
-			e.printStackTrace();
-		}
-		return "ERR.ORF.OUN.Djm";
-	}
-	
-	public void attemptConnection(String ip, int port) {
+	private Socket socket;
+	public void attemptConnection(String ip, int port) { // Attempt a connection, subsequently create object I/O streams.
 		System.out.println("[attemptConnection] Connect!");
 		if (isConnected()) throw new IllegalStateException("Cannot attempt new connection: connection already established!");
 		Socket s = new Socket();
@@ -156,7 +140,7 @@ public class NetworkManager {
 			socket = s;
 			if (socket != null) {
 				if (isListening()) stopListening();
-				getStreams();
+				makeStreams();
 				invokeListeners((l) -> l.connectionAttained(socket));
 			} else {
 				ois = null;
@@ -168,8 +152,7 @@ public class NetworkManager {
 			e.printStackTrace();
 		}
 	}
-	
-	public boolean attemptDisconnect() {
+	public boolean attemptDisconnect() { // Destroy socket and streams of connection
 		System.out.println("[attemptDisconnect] Disconnect!");
 		if (socket == null) throw new IllegalStateException("Socket is null");
 		if (!socket.isConnected()) throw new IllegalStateException("Socket was never connected");
@@ -186,8 +169,24 @@ public class NetworkManager {
 			return false;
 		}
 	}
-	
-	public void listenConcurrently() {
+
+	// SERVER/PORT LISTENING: TODO: Seperate listening into a seperate class
+	private boolean listening = false; 
+	public boolean isListening() { // returns true if currently accepting incoming connections
+		return (!isConnected()) && server != null && listening;
+	}
+	private ServerSocket server; // Server socket to listen for incoming connections
+	private Thread listenerThread; // Thread which listens for connections
+	public int getListenPort() { return server.getLocalPort(); }
+	public String getLocalIPString() { // Returns host ip as a string
+		try {
+			return Inet4Address.getLocalHost().getHostAddress().toString();
+		} catch(Exception e) {
+			e.printStackTrace();
+		}
+		return "ERR.ORF.OUN.Djm";
+	}
+	public void listenConcurrently() { // Listen for new connnections on another thread
 		System.out.println("[listenConcurrently] Listening...");
 		if (isConnected()) throw new IllegalStateException("Can't listen: already established connection!");
 		listenerThread = new Thread(() -> {
@@ -197,7 +196,7 @@ public class NetworkManager {
 				invokeListeners((l) -> l.beganListening());
 				try {
 					socket = server.accept();
-					getStreams();
+					makeStreams();
 					invokeListeners((l) -> l.connectionAttained(socket));
 				} catch (SocketException e) {
 					System.err.println("Server socket closed successfully!");
@@ -213,8 +212,7 @@ public class NetworkManager {
 		}, "ServerListenerThread");
 		listenerThread.start();
 	}
-	
-	public void stopListening() {
+	public void stopListening() { // Halt the thread listening for new connections and destroy server socket
 		System.out.println("[stopListening] Stopped listening!");
 		if (!isListening()) throw new IllegalStateException("Can't stop listening: was never listening.");
 		listening = false;

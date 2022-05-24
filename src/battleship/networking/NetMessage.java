@@ -2,18 +2,23 @@ package battleship.networking;
 
 import java.io.Serializable;
 
-public class NetMessage implements Serializable {
+// This class is used to communicate on the Object streams from the NetworkManager, 
+// it can wrap other data types within the "content" field
 
-	enum Category {
-		CONNECTION, CHAT, DISCONNECT;
-	}
+public class NetMessage implements Serializable {
 	
+	// Properties/content
 	private boolean remote = false;
 	public boolean isRemote() { return remote; }
-	public void flipRemote() { remote = !remote; }
+	public void flipRemote() { remote = !remote; } // Used when object is received to indicate that it didn't originate on local machine
 	private Category category;
 	public Category getCategory() { return category; }
 	private Object content;
+	
+	// Content types
+	enum Category {
+		CONNECTION, CHAT, DISCONNECT; // TODO: Add a strike/missile option that contains a gameMove as content.
+	}
 	public String getMessage() { 
 		switch (category) {
 		case CHAT:
@@ -30,11 +35,12 @@ public class NetMessage implements Serializable {
 			throw new IllegalStateException("Cannot get greeting of non-connection NetMessage!");
 		}
 	}
+	
+	// Constructors/factory
 	private NetMessage(Category c, Object content) {
 		this.category = c;
 		this.content = content;
 	}
-	
 	public static NetMessage chat(String msg) {
 		return new NetMessage(Category.CHAT, msg);
 	}

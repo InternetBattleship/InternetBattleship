@@ -8,6 +8,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 
+// This class draws the LogMessages in a list
 public class LogListCellRenderer implements ListCellRenderer<LogMessage> {
 
 	private JLabel l = new JLabel();
