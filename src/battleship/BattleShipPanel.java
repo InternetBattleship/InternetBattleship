@@ -108,12 +108,67 @@ public class BattleShipPanel extends JPanel{
 						break;
 				}
 				
-				//adds new ship to board
-				newShip.setX(boardX);
-				newShip.setY(boardY);
-				newShip.setOrientation(newOrientation);
-				shipyard.add(newShip);
-				return true;
+				//makes sure ships aren't intersecting
+				boolean isIntersecting = false;
+				for(int i = 0; i < shipyard.size(); i++)
+				{
+					Ship currentShip = shipyard.get(i);
+					
+					if(newOrientation == NORTH)
+					{
+						
+					}
+					else if(newOrientation == EAST)//Ship being placed facing east
+					{
+						if(currentShip.getOrientation() == EAST)//ship being checked facing east
+						{
+							if(boardY == currentShip.getY() && (boardX > (currentShip.getX() - shipLength) && boardX < currentShip.getX() +currentShip.getLength()))
+							{
+								isIntersecting = true;
+							}
+						}
+						if(currentShip.getOrientation() == WEST)//west
+						{
+							if(boardY == currentShip.getY() && (boardX > ((currentShip.getX() - currentShip.getLength() + 1) - shipLength) && boardX <= currentShip.getX()))
+							{
+								isIntersecting = true;
+							}
+						}
+						else if (currentShip.getOrientation() == NORTH)//north
+						{
+							if((boardY <= currentShip.getY() && boardY > currentShip.getY() - currentShip.getLength()) && boardX <= currentShip.getX() && boardX > currentShip.getX() - shipLength)
+							{
+								isIntersecting = true;
+							}
+						}
+						else if (currentShip.getOrientation() == SOUTH)//south
+						{
+							if((boardY >= currentShip.getY() && boardY < currentShip.getY() + currentShip.getLength()) && boardX <= currentShip.getX() && boardX > currentShip.getX() - shipLength)
+							{
+								isIntersecting = true;
+							}
+						}
+					}
+					
+					
+				}
+				
+				if(isIntersecting)
+				{
+					System.out.println("intersecting");
+					return false;
+				}
+				else
+				{
+					//adds new ship to board
+					newShip.setX(boardX);
+					newShip.setY(boardY);
+					newShip.setOrientation(newOrientation);
+					shipyard.add(newShip);
+					return true;
+				}
+				
+				
 			}
 		}
 		else
