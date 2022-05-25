@@ -174,7 +174,7 @@ public class NetTestFrame implements NetworkManager.Listener {
 			lm.add(LogMessage.chatLog("Disconnect notification", nm.isRemote()));
 			break;
 		default:
-			throw new IllegalArgumentException("Unhandled NetMessage category!");
+			throw new IllegalArgumentException("Unhandled NetMessage category: " + nm.getCategory());
 		}
 	}
 	
@@ -183,13 +183,12 @@ public class NetTestFrame implements NetworkManager.Listener {
 	public void connectionAttained(Socket s) { 
 		lm.add(LogMessage.networkLog("Connection attained!", true));
 		updateState(); 
-		sendNetMessage(NetMessage.connection(manager.getMyNetUser()));
 	}
 	@Override
 	public void connectionClosed(Socket s) { 
 		lm.add(LogMessage.networkLog("Connection closed!", false));
+		manager.sendNetMessage(NetMessage.Factory.disconnect());
 		updateState(); 
-		manager.sendNetMessage(NetMessage.disconnect());
 	}
 	@Override
 	public void beganListening() { 
@@ -219,7 +218,7 @@ public class NetTestFrame implements NetworkManager.Listener {
 	// INTERACT WITH LOGIC LAYER
 	private ActionListener connectDisconnect = (e) -> {
 				if (manager.isConnected()) {
-					sendNetMessage(NetMessage.disconnect());
+					sendNetMessage(NetMessage.Factory.disconnect());
 					manager.attemptDisconnect();
 				} else {
 					manager.attemptConnection(ipField.getText(), (int) portField.getValue());
@@ -234,12 +233,21 @@ public class NetTestFrame implements NetworkManager.Listener {
 			},
 			sendChat = (e) -> {
 				String msg = chatField.getText().trim();
-				if (msg.length() > 0) sendNetMessage(NetMessage.chat(msg));
+				if (msg.length() > 0) sendNetMessage(NetMessage.Factory.chat(msg));
 				chatField.setText("");
 			};
 	public void sendNetMessage(NetMessage nm) {
 		logNetMessage(nm);
 		manager.sendNetMessage(nm);
+	}
+	@Override
+	public void handshakeCompleted(Socket s) {
+		sendNetMessage(NetMessage.Factory.connection(manager.getMyNetUser()));
+	}
+	@Override
+	public void handshakeFailed(Socket s, int toMs) {
+		// TODO Auto-generated method stub
+		
 	}
 	
 }
