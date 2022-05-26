@@ -4,9 +4,7 @@ import java.io.Serializable;
 
 // This class is used to communicate on the Object streams from the NetworkManager, 
 // it can wrap other data types within the "content" field
-
 public class NetMessage implements Serializable {
-	
 	// Properties/content
 	private boolean remote = false;
 	public boolean isRemote() { return remote; }
@@ -35,14 +33,6 @@ public class NetMessage implements Serializable {
 			throw new IllegalStateException("Cannot get stage of non-handshake NetMessage!");
 		}
 	}
-	public boolean isHandshakeStarter() {
-		switch (category) {
-		case HANDSHAKE:
-			return (boolean) content[1]; 
-		default:
-			throw new IllegalStateException("Cannot check starter of non-handshake NetMessage!");
-		}
-	}
 	public String getMessage() { 
 		switch (category) {
 		case CHAT:
@@ -59,16 +49,14 @@ public class NetMessage implements Serializable {
 			throw new IllegalStateException("Cannot get greeting of non-connection NetMessage!");
 		}
 	}
-	
 	// Constructors/factory
 	private NetMessage(Category c, Object[] content) {
 		this.category = c;
 		this.content = content;
 	}
-	
-	public class Factory {
-		public static NetMessage handshake(int stage, boolean starter) {
-			return new NetMessage(Category.HANDSHAKE, new Object[] { stage, starter });
+	public static class Factory {
+		public static NetMessage handshake(int stage) {
+			return new NetMessage(Category.HANDSHAKE, new Object[] { stage });
 		}
 		public static NetMessage connection(NetUser greet) {
 			return new NetMessage(Category.CONNECTION, new Object[] { greet });

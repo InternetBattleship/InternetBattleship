@@ -18,7 +18,7 @@ import java.util.ArrayList;
 // This class should facilitate all network connection making and destroying to/from opponents.
 public class NetworkManager {
 	
-	private static final int HANDSHAKE_TARGET = 2;
+	private static final int HANDSHAKE_TARGET = 3;
 	
 	// Net Users
 	private NetUser self = new NetUser(), opponent = null;
@@ -49,16 +49,18 @@ public class NetworkManager {
 		public void unresolvedAddress(InetSocketAddress a);
 		public void connectionTimeout(InetSocketAddress a, int toMs);
 		// Handshake:
-		public void handshakeFailed(Socket s, int toMs);
 		public void handshakeCompleted(Socket s);
+		public void handshakeFailed(Socket s, NetHandshakeException e);
 		// Messaging
 		public void netMessageReceived(NetMessage nm);
 	}
 
 	public String getStatusString() { // Displayed on UI
-		if (isListening()) return "Listening at " + getLocalIPString() + ":" + getListenPort();
-		if (isConnected()) return "Connected to " + opponent;
-		return "Inactive";
+		String str = "Inactive";
+		if (isListening()) str = "Listening at " + getLocalIPString() + ":" + getListenPort();
+		if (isConnected()) str =  "Connected to " + opponent;
+		System.out.println(str);
+		return str;
 	}
 	
 	// MESSAGING: TODO: Separate message handling into its own separate class
@@ -66,6 +68,7 @@ public class NetworkManager {
 	private ObjectInputStream ois;
 	private ObjectOutputStream oos;
 	public void sendNetMessage(NetMessage nm) { // Send a message through object stream to the opponent
+		System.out.println("Sending NetMessage: " + nm.getCategory());
 		if (!isConnected()) throw new IllegalStateException("Not connected!");
 		try {
 			oos.writeObject(nm);
@@ -74,28 +77,36 @@ public class NetworkManager {
 		}
 	}
 	private void makeStreams(boolean handshakeStarter) { // Construct streams from general connection socket
-		int startingStage = handshakeStarter? 0 : -1;
 		if (!isConnected()) throw new IllegalStateException("Not connected!");
 		try {
 			oos = new ObjectOutputStream(socket.getOutputStream());
 			oos.flush();
 			ois = new ObjectInputStream(socket.getInputStream());
 			inputThread = new Thread(() -> {
-				int handshakeLevel = startingStage;
+				int handshakeLevel = handshakeStarter ? 0 : -1;
 				while (isConnected()) {
 					try {
 						Object o = readObject(ois);
 						NetMessage nm = parseObjectToNetMessage(o);
-							if (validateHandshake(handshakeLevel, nm)) {
+							switch (processHandshake(handshakeLevel, nm)) {
+							case INCREMENT:
 								handshakeLevel++;
-							} else {
+								break;
+							case COMPLETED:
+//								sendNetMessage(NetMessage.Factory.connection(self));
+								break;
+							case NON_HANDSHAKE:
 								handleNetMessage(nm);
+								break;
+							default:
+								throw new NetHandshakeException("Unknown HandshakeState returned!");
 							}
 					} catch (NetHandshakeException e) {
 						System.err.println("Handshake failed: " + e.getMessage());
+						invokeListeners((l) -> l.handshakeFailed(socket, e));
 						break;
 					} catch (ClassNotFoundException e) {
-						System.err.println("[NetorkManager] Foreign class recieved!");
+						e.printStackTrace();
 						break;
 					} catch (IOException e) {
 						e.printStackTrace();
@@ -107,9 +118,10 @@ public class NetworkManager {
 				opponent = null;
 			}, "NetworkInputStreamReader");
 			inputThread.start();
-			if (handshakeStarter) oos.writeObject(NetMessage.Factory.handshake(startingStage, handshakeStarter));
+			if (handshakeStarter) sendNetMessage(NetMessage.Factory.handshake(0));
 		} catch (IOException e) {
 			e.printStackTrace();
+			attemptDisconnect(true);
 		}
 	}
 	private Object readObject(ObjectInputStream ois) throws IOException, ClassNotFoundException {
@@ -117,6 +129,7 @@ public class NetworkManager {
 		try {
 			o = ois.readObject();
 		} catch (SocketException e) {
+			System.err.println("[NetworkManager.readObject] SOCKET EXCEPTION");
 			e.printStackTrace();
 		} catch (EOFException e) {
 			System.err.println("EOFException: " + e.getMessage());
@@ -127,24 +140,54 @@ public class NetworkManager {
 	}
 	private NetMessage parseObjectToNetMessage(Object o) {
 			final NetMessage nm = NetMessage.class.cast(o); 
+			if (nm == null) throw new IllegalArgumentException("Object is null!");
 			nm.flipRemote();
 			return nm;
 	}
 	// Returns true if local level should be incremented, throws exception handshake has failed, returns false if hands are shook
-	private boolean validateHandshake(int local, NetMessage nm) throws NetHandshakeException {
-		if (local == HANDSHAKE_TARGET) return false;
-		if (local > HANDSHAKE_TARGET) throw new NetHandshakeException("Handshake passed target!");
-		if (!nm.isHandshake()) throw new NetHandshakeException("Handshake failed!");
-		int remote = nm.getHandshakeStage();
-		System.out.println("[validateHandshake] Local" + local + " Remote" + remote);
-		if (local+1!=remote) throw new NetHandshakeException("Handshake out of sync!");
-		return true;
+	private boolean localCompletedHandshake = false;
+	private boolean remoteCompletedHandshake = false;
+	private void resetHandshakeStatus() {
+		localCompletedHandshake = false;
+		remoteCompletedHandshake = false;
 	}
-	private void handleNetMessage(NetMessage nm) {
-		if (nm.getCategory() == NetMessage.Category.CONNECTION) {
-			opponent = nm.getGreeting();
+	private enum HandshakeState { INCREMENT, COMPLETED, NON_HANDSHAKE; }
+	private HandshakeState processHandshake(int local, NetMessage nm) throws NetHandshakeException {
+		if ((!nm.isHandshake()) && (!localCompletedHandshake)) throw new NetHandshakeException("Non-handshake messages can't be sent until handshake completed: " + nm.getCategory());
+		if (nm.isHandshake() && remoteCompletedHandshake && localCompletedHandshake) throw new NetHandshakeException("Excessive handshaking, already completed!");
+		if ((!nm.isHandshake()) && localCompletedHandshake) return HandshakeState.NON_HANDSHAKE;
+		if (local > HANDSHAKE_TARGET) throw new NetHandshakeException("Local handshake stage passed local target!");
+		int remote = nm.getHandshakeStage();
+		if (remote == HANDSHAKE_TARGET) remoteCompletedHandshake = true;
+		if (remote > HANDSHAKE_TARGET) throw new NetHandshakeException("Remote handshake stage passed local target!");
+		if (local+1 != remote && local != remote) throw new NetHandshakeException("Handshake out of sync!");
+		if (local < HANDSHAKE_TARGET) {
+			local++;
+			handshakeCheck(local, remoteCompletedHandshake);
+			return HandshakeState.INCREMENT;
 		}
-		invokeListeners((l) -> l.netMessageReceived(nm));
+		if (localCompletedHandshake) throw new NetHandshakeException("Handshake cannot be completed twice!");
+		handshakeCheck(local, remoteCompletedHandshake);
+		return HandshakeState.COMPLETED;
+	}
+	private void handshakeCheck(int local, boolean remoteComplete) {
+		if (local == HANDSHAKE_TARGET) localCompletedHandshake = true;
+		if (!remoteComplete) sendNetMessage(NetMessage.Factory.handshake(local));
+		if (localCompletedHandshake && remoteCompletedHandshake) sendNetMessage(NetMessage.Factory.connection(self));
+	}
+
+	private void handleNetMessage(NetMessage nm) {
+		switch (nm.getCategory()) {
+		case CONNECTION:
+			opponent = nm.getGreeting();
+			break;
+		case DISCONNECT:
+			attemptDisconnect(false);
+			break;
+		default:
+			invokeListeners((l) -> l.netMessageReceived(nm));
+			break;
+		}
 	}
 	
 	// GENERAL CONNECTION MANAGEMENT: TODO: Separate general connection into a new class
@@ -188,22 +231,25 @@ public class NetworkManager {
 			e.printStackTrace();
 		}
 	}
-	public boolean attemptDisconnect() { // Destroy socket and streams of connection
+	public boolean attemptDisconnect(boolean locallyInitiated) { // Destroy socket and streams of connection
 		System.out.println("[attemptDisconnect] Disconnect!");
 		if (socket == null) throw new IllegalStateException("Socket is null");
 		if (!socket.isConnected()) throw new IllegalStateException("Socket was never connected");
 		if (socket.isClosed()) throw new IllegalStateException("Socket is already closed");
+		if (locallyInitiated) sendNetMessage(NetMessage.Factory.disconnect());
+		boolean closedSuccessfully = false;
 		try {
 			socket.close();
-			socket = null;
-			ois = null;
-			oos = null;
-			invokeListeners((l) -> l.connectionClosed(socket));
-			return true;
+			closedSuccessfully = true;
 		} catch (IOException e) {
 			e.printStackTrace();
-			return false;
 		}
+		socket = null;
+		ois = null;
+		oos = null;
+		resetHandshakeStatus();
+		invokeListeners((l) -> l.connectionClosed(socket));
+		return closedSuccessfully;
 	}
 
 	// SERVER/PORT LISTENING: TODO: Seperate listening into a seperate class
@@ -233,13 +279,13 @@ public class NetworkManager {
 				try {
 					socket = server.accept();
 					makeStreams(true);
+					invokeListeners((l) -> l.stoppedListening());
 					invokeListeners((l) -> l.connectionAttained(socket));
 				} catch (SocketException e) {
 					System.err.println("Server socket closed successfully!");
 				}
 				server.close();
 				server = null;
-				invokeListeners((l) -> l.stoppedListening());
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
