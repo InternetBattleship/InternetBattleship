@@ -6,18 +6,28 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.MulticastSocket;
 import java.net.NetworkInterface;
+import java.util.ArrayList;
 
-import battleship.networking.ListenerSource;
 import battleship.networking.NetUser;
 
-public class NetworkBrowser extends ListenerSource<NetworkBrowser> {
+public class NetworkBrowser {
 
-	public interface Listener extends ListenerSource.Listener<NetworkBrowser> {
-		
+	// Listeners
+	private ArrayList<Listener> listeners = new ArrayList<Listener>(); // List
+	// Add/remove
+	public void addListener(Listener l) { listeners.add(0, l); } 
+	public boolean removeListener(Listener l) { return listeners.remove(l); }
+	// Invoking
+	public void invokeListeners(ListenerInvoker li) {
+		for (int i=listeners.size()-1;i>=0;i--) li.invoke(listeners.get(i));
 	}
+	private interface ListenerInvoker {
+		public void invoke(Listener l);
+	}
+	public interface Listener { }
 	
 	// Net Users
-	private NetUser self = new NetUser();
+	private NetUser self = NetUser.Factory.random();
 	public NetUser getMyNetUser() { return self; }
 	
 	// Multicast

@@ -1,49 +1,28 @@
 package battleship.networking.browsing;
 
-import java.io.ByteArrayInputStream;
-import java.io.ByteArrayOutputStream;
+import java.io.Externalizable;
 import java.io.IOException;
-import java.io.ObjectInputStream;
-import java.io.ObjectOutputStream;
-import java.io.Serializable;
+import java.io.ObjectInput;
+import java.io.ObjectOutput;
+import java.util.Arrays;
 
-public class NetBrowserMessage implements Serializable {
-	private static byte[] serializeToBytes(NetBrowserMessage nbm) throws IOException {
-		System.out.println("Writing: " + nbm.toString());
-		ByteArrayOutputStream bos = new ByteArrayOutputStream();
-		ObjectOutputStream oos = new ObjectOutputStream(bos);
-		oos = new ObjectOutputStream(bos);
-		oos.writeObject(nbm);
-		byte[] data = bos.toByteArray();
-		System.out.println("  Wrote bytes: " + bytesToHexStr(data));
-		return data;
-	}
-	private static NetBrowserMessage deserializeFromBytes(byte[] bytes) throws IOException, ClassNotFoundException {
-		byte[] data = bytes.clone();
-		System.out.println("Reading bytes: " + bytesToHexStr(data));
-		ByteArrayInputStream bis = new ByteArrayInputStream(data);
-		bis.
-		ObjectInputStream ois = new ObjectInputStream(bis);
-		NetBrowserMessage nbm = (NetBrowserMessage) ois.readObject();
-		return nbm;
-	}
-	private static String bytesToHexStr(byte[] bytes) {
-	    String str = ""; 
-		for (byte b : bytes) {
-	        str += String.format("%02X", b);
-	    }	
-		return str;
-	}
+import battleship.networking.Serialization;
+
+public class NetBrowserMessage implements Externalizable {
+	
+	// Should only be used when deserializing
+	public NetBrowserMessage() { }
+	
 	public byte[] getBytes() throws IOException {
-		return NetBrowserMessage.serializeToBytes(this);
+		return Serialization.serializeToBytes(this);
 	}
 	public static NetBrowserMessage fromBytes(byte[] bytes) throws ClassNotFoundException, IOException {
-		return deserializeFromBytes(bytes);
+		return Serialization.deserializeFromBytes(bytes);
 	}
 	public enum Type { SCAN, INFO; }
-	private Type type;
+	private Type type = null;
 	public Type getType() { return type; }
-	private Object[] content;
+	private Object[] content = null;
 	private NetBrowserMessage(Type type, Object[] content) {
 		this.type = type;
 		this.content = content;
@@ -79,4 +58,31 @@ public class NetBrowserMessage implements Serializable {
 			return new NetBrowserMessage(Type.INFO, new Object[] { info });
 		}
 	}
+	@Override
+	public boolean equals(Object obj) {
+		if (!(obj instanceof NetBrowserMessage)) return false;
+		NetBrowserMessage o = (NetBrowserMessage) obj;
+		return Arrays.equals(content, o.content) && this.type.equals(o.type);
+	}
+	@Override
+	public int hashCode() {
+		return 31*Arrays.hashCode(content) + type.hashCode();
+	}
+	
+	@Override
+	public void writeExternal(ObjectOutput out) throws IOException {
+		String typeStr = type.name();
+		out.writeInt(typeStr.length());
+		out.writeChars(typeStr);
+		out.writeObject(content);
+	}
+	@Override
+	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
+		int typeStrLen = in.readInt();
+		String typeStr = "";
+		for (int i=0;i<typeStrLen;i++) typeStr += in.readChar();
+		this.type = Type.valueOf(typeStr);
+		content = (Object[]) in.readObject();
+	}
+	
 }
