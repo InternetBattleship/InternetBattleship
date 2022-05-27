@@ -162,7 +162,7 @@ public class Game implements ActionListener, MouseListener{
 			if(panel.addShip(mouseX, mouseY, orientation, newShip))
 			{//ship placed
 				frame.repaint();
-				//button.setEnabled(false);
+				button.setEnabled(false);
 				state = NONE;
 				button.setBackground(Color.LIGHT_GRAY);
 			}

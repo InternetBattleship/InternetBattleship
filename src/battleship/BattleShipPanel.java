@@ -109,51 +109,8 @@ public class BattleShipPanel extends JPanel{
 				}
 				
 				//makes sure ships aren't intersecting
-				boolean isIntersecting = false;
-				for(int i = 0; i < shipyard.size(); i++)
-				{
-					Ship currentShip = shipyard.get(i);
-					
-					if(newOrientation == NORTH)
-					{
-						
-					}
-					else if(newOrientation == EAST)//Ship being placed facing east
-					{
-						if(currentShip.getOrientation() == EAST)//ship being checked facing east
-						{
-							if(boardY == currentShip.getY() && (boardX > (currentShip.getX() - shipLength) && boardX < currentShip.getX() +currentShip.getLength()))
-							{
-								isIntersecting = true;
-							}
-						}
-						if(currentShip.getOrientation() == WEST)//west
-						{
-							if(boardY == currentShip.getY() && (boardX > ((currentShip.getX() - currentShip.getLength() + 1) - shipLength) && boardX <= currentShip.getX()))
-							{
-								isIntersecting = true;
-							}
-						}
-						else if (currentShip.getOrientation() == NORTH)//north
-						{
-							if((boardY <= currentShip.getY() && boardY > currentShip.getY() - currentShip.getLength()) && boardX <= currentShip.getX() && boardX > currentShip.getX() - shipLength)
-							{
-								isIntersecting = true;
-							}
-						}
-						else if (currentShip.getOrientation() == SOUTH)//south
-						{
-							if((boardY >= currentShip.getY() && boardY < currentShip.getY() + currentShip.getLength()) && boardX <= currentShip.getX() && boardX > currentShip.getX() - shipLength)
-							{
-								isIntersecting = true;
-							}
-						}
-					}
-					
-					
-				}
 				
-				if(isIntersecting)
+				if(isIntersecting(newShip, boardX, boardY, newOrientation))
 				{
 					System.out.println("intersecting");
 					return false;
@@ -177,4 +134,82 @@ public class BattleShipPanel extends JPanel{
 		}
 		
 	}
+	
+	public boolean isIntersecting(Ship shipOne, int x, int y, int orientation)//checks if a ship at given location will intersect with any other ship
+	{
+		for(int a = 0; a < shipyard.size(); a++)//runs through all ships on the board
+		{	
+			Ship shipTwo = shipyard.get(a);
+			
+			//arrays for holding all the coordinates the ships are on
+			int[] shipOneX = new int[shipOne.getLength()];
+			int[] shipOneY = new int[shipOne.getLength()];
+			int[] shipTwoX = new int[shipTwo.getLength()];
+			int[] shipTwoY = new int[shipTwo.getLength()];
+			
+			for(int i = 0; i < shipOne.getLength(); i++)//generates x and y coord arrays for ship one
+			{
+				switch(orientation)
+				{
+				case NORTH:
+					shipOneX[i] = x;
+					shipOneY[i] = y - i;
+					break;
+				case SOUTH:
+					shipOneX[i] = x;
+					shipOneY[i] = y + i;
+					break;
+				case WEST:
+					shipOneX[i] = x - i;
+					shipOneY[i] = y;
+					break;
+				case EAST:
+					shipOneX[i] = x + i;
+					shipOneY[i] = y;
+					break;
+				}
+			}
+			for(int i = 0; i < shipTwo.getLength(); i++)//generates x and y coord arrays for ship two
+			{
+				switch(shipTwo.getOrientation())
+				{
+				case NORTH:
+					shipTwoX[i] = shipTwo.getX();
+					shipTwoY[i] = shipTwo.getY() - i;
+					break;
+				case SOUTH:
+					shipTwoX[i] = shipTwo.getX();
+					shipTwoY[i] = shipTwo.getY() + i;
+					break;
+				case WEST:
+					shipTwoX[i] = shipTwo.getX() - i;
+					shipTwoY[i] = shipTwo.getY();
+					break;
+				case EAST:
+					shipTwoX[i] = shipTwo.getX() + i;
+					shipTwoY[i] = shipTwo.getY();
+					break;
+				}
+			}
+			
+			//Checks if any point on ship one is in the same spot as any point on ship two
+			for(int i = 0; i < shipTwo.getLength(); i++)
+			{
+				for(int j = 0; j < shipOne.getLength(); j++)
+				{
+					if(shipOneX[j] == shipTwoX[i] && shipOneY[j] == shipTwoY[i])
+					{
+						return true;
+					}
+				}
+			}
+			
+			
+		}
+		return false;
+	}
+	
+	
+	
+	
 }

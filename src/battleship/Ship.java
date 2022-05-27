@@ -11,11 +11,12 @@ public class Ship {
 	final int SOUTH = 2;
 	final int WEST = 3;
 	
-	
+	//variables
 	int length;
 	int orientation = SOUTH;
 	int x;
 	int y;
+	Color shipColor = Color.blue;
 	
 	//getters and setters
 	public int getLength() {
@@ -68,25 +69,36 @@ public class Ship {
 	public void drawMe(int boardX, int boardY, int boardSize, Graphics g)
 	{
 		//color of ship
-		g.setColor(Color.blue);
+		g.setColor(shipColor);
 		int squareSize = (boardSize/10);
 		
 		//different orientations
 		if(orientation == NORTH)
 		{
 			g.fillRect(boardX + (squareSize *(x - 1)), boardY + (squareSize *(y - length)), squareSize, squareSize * length);
+			g.setColor(Color.BLACK);
+			g.drawRect(boardX + (squareSize *(x - 1)), boardY + (squareSize *(y - length)), squareSize, squareSize * length);
+			
 		}
 		if(orientation == EAST)
 		{
 			g.fillRect(boardX + (squareSize *(x - 1)), boardY + (squareSize *(y - 1)), squareSize * length, squareSize);
+			g.setColor(Color.BLACK);
+			g.drawRect(boardX + (squareSize *(x - 1)), boardY + (squareSize *(y - 1)), squareSize * length, squareSize);
+
 		}
 		if(orientation == WEST)
 		{
 			g.fillRect(boardX + (squareSize *(x - length)), boardY + (squareSize *(y - 1)), squareSize * length, squareSize);
+			g.setColor(Color.BLACK);
+			g.drawRect(boardX + (squareSize *(x - length)), boardY + (squareSize *(y - 1)), squareSize * length, squareSize);
 		}
 		if(orientation == SOUTH)
 		{
 			g.fillRect(boardX + (squareSize *(x - 1)) , boardY + (squareSize *(y - 1)), squareSize, squareSize * length);
+			g.setColor(Color.BLACK);
+			g.drawRect(boardX + (squareSize *(x - 1)) , boardY + (squareSize *(y - 1)), squareSize, squareSize * length);
+
 		}
 		
 	}
