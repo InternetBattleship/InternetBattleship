@@ -29,10 +29,27 @@ public class BattleShipPanel extends JPanel{
 	
 	//shipyard
 	ArrayList<Ship> shipyard = new ArrayList<Ship>();
+	ArrayList<ArrayList<GameMove>> gameBoard = new ArrayList<ArrayList<GameMove>>();
+	ArrayList<ArrayList<GameMove>> opposingBoard = new ArrayList<ArrayList<GameMove>>();
 	
 	public BattleShipPanel()
 	{
 		super();
+		
+		for(int i = 0; i < 10; i++)
+		{
+			ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
+			for(int j = 0; j < 10; j++)
+			{
+				blankArray.add(null);
+			}
+			gameBoard.add((ArrayList<GameMove>) blankArray.clone());
+			opposingBoard.add(blankArray);
+		}
+		
+		gameBoard.get(1).set(1, new GameMove(false, 10, 10));
+		
+		
 	}
 	
 	public void paintComponent(Graphics g){
@@ -47,7 +64,32 @@ public class BattleShipPanel extends JPanel{
 		{
 			shipyard.get(i).drawMe(rightBoardX, rightBoardY, boardSize, g);
 		}
+		
+		//draw moves
+		for(int i = 0; i < 10; i++)
+		{
+			for(int j = 0; j < 10; j++)
+			{
+				if(opposingBoard.get(i).get(j) != null)
+				{
+					if(opposingBoard.get(i).get(j).getHit())//draw a hit
+					{
+						//draws an x
+						g.drawLine(leftBoardX + ((boardSize/10) * i), leftBoardY + ((boardSize/10) * j), (leftBoardX + ((boardSize/10) * (i +1))), leftBoardY + ((boardSize/10) * (j+1)));
+						g.drawLine(leftBoardX + ((boardSize/10) * (i + 1)), leftBoardY + ((boardSize/10) * j), (leftBoardX + ((boardSize/10) * i)), leftBoardY + ((boardSize/10) * (j+1)));
+					}
+					else//draw a miss
+					{
+						//draws a circle
+						g.drawOval(leftBoardX + ((boardSize/10) * i), leftBoardY + ((boardSize/10) * j), (boardSize/10), (boardSize/10));
+					}
+				}
+			}
+		}
 	}
+	
+	//draws a move
+	
 	
 	//draws a playing board
 	public void drawBoard(int x, int y, Graphics g)
@@ -135,6 +177,33 @@ public class BattleShipPanel extends JPanel{
 		
 	}
 	
+	//takes a shot
+	public boolean takeShot(int x, int y)
+	{
+		int boardX = ((x - leftBoardX)/(boardSize/10));
+		int boardY = ((y - leftBoardY)/(boardSize/10));
+		
+		//note, currently this function checks the players own board for testing, this will not be the case in final version
+		if(opposingBoard.get(boardX).get(boardY) == null)
+		{
+			if(checkForShip(boardX + 1 , boardY + 1) != null)
+			{
+				opposingBoard.get(boardX).set(boardY, new GameMove(true, boardX, boardY));
+			}
+			else
+			{
+				opposingBoard.get(boardX).set(boardY, new GameMove(false, boardX, boardY));
+			}
+			return true;
+		}
+		else
+		{
+			return false;
+		}
+		
+		
+	}
+	
 	public boolean isIntersecting(Ship shipOne, int x, int y, int orientation)//checks if a ship at given location will intersect with any other ship
 	{
 		for(int a = 0; a < shipyard.size(); a++)//runs through all ships on the board
@@ -144,8 +213,11 @@ public class BattleShipPanel extends JPanel{
 			//arrays for holding all the coordinates the ships are on
 			int[] shipOneX = new int[shipOne.getLength()];
 			int[] shipOneY = new int[shipOne.getLength()];
-			int[] shipTwoX = new int[shipTwo.getLength()];
-			int[] shipTwoY = new int[shipTwo.getLength()];
+			
+			ArrayList<int[]> shipTwoCoords = getShipCoords(shipTwo);
+			int[] shipTwoX = shipTwoCoords.get(0);
+			int[] shipTwoY = shipTwoCoords.get(1);
+			
 			
 			for(int i = 0; i < shipOne.getLength(); i++)//generates x and y coord arrays for ship one
 			{
@@ -169,28 +241,8 @@ public class BattleShipPanel extends JPanel{
 					break;
 				}
 			}
-			for(int i = 0; i < shipTwo.getLength(); i++)//generates x and y coord arrays for ship two
-			{
-				switch(shipTwo.getOrientation())
-				{
-				case NORTH:
-					shipTwoX[i] = shipTwo.getX();
-					shipTwoY[i] = shipTwo.getY() - i;
-					break;
-				case SOUTH:
-					shipTwoX[i] = shipTwo.getX();
-					shipTwoY[i] = shipTwo.getY() + i;
-					break;
-				case WEST:
-					shipTwoX[i] = shipTwo.getX() - i;
-					shipTwoY[i] = shipTwo.getY();
-					break;
-				case EAST:
-					shipTwoX[i] = shipTwo.getX() + i;
-					shipTwoY[i] = shipTwo.getY();
-					break;
-				}
-			}
+			
+			
 			
 			//Checks if any point on ship one is in the same spot as any point on ship two
 			for(int i = 0; i < shipTwo.getLength(); i++)
@@ -207,6 +259,58 @@ public class BattleShipPanel extends JPanel{
 			
 		}
 		return false;
+	}
+	
+	//returns array of all x and y coordinates a given ship is on
+	public ArrayList<int[]> getShipCoords(Ship ship)
+	{
+		ArrayList<int[]> returnArray = new ArrayList<int[]>();
+		int[] shipX = new int[ship.getLength()];
+		int[] shipY = new int[ship.getLength()];
+		returnArray.add(shipX);
+		returnArray.add(shipY);
+		
+		for(int i = 0; i < ship.getLength(); i++)//generates x and y coord arrays for ship
+		{
+			switch(ship.getOrientation())
+			{
+			case NORTH:
+				shipX[i] = ship.getX();
+				shipY[i] = ship.getY() - i;
+				break;
+			case SOUTH:
+				shipX[i] = ship.getX();
+				shipY[i] = ship.getY() + i;
+				break;
+			case WEST:
+				shipX[i] = ship.getX() - i;
+				shipY[i] = ship.getY();
+				break;
+			case EAST:
+				shipX[i] = ship.getX() + i;
+				shipY[i] = ship.getY();
+				break;
+			}
+		}
+		return returnArray;
+	}
+	
+	//checks if there is a ship at the given x and y coords
+	public Ship checkForShip(int x, int y)
+	{
+		for(int i = 0; i < shipyard.size(); i++)
+		{
+			ArrayList<int[]> shipCoords = getShipCoords(shipyard.get(i));
+			
+			for(int j = 0; j < shipyard.get(i).getLength(); j++)
+			{
+				if(shipCoords.get(0)[j] == x && shipCoords.get(1)[j] == y)
+				{
+					return(shipyard.get(i));
+				}
+			}
+		}
+		return null;
 	}
 	
 	

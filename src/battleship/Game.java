@@ -28,16 +28,23 @@ public class Game implements ActionListener, MouseListener{
 	JTextField shipOrientation = new JTextField("North");
 	Container east = new Container();
 	
+	//west container
+	JButton aimShotB = new JButton("Aim Shot");
+	Container west = new Container();
+	
 	final int NONE = 0;
 	final int PLACING_CARRIER = 1;
 	final int PLACING_BATTLESHIP = 2;
 	final int PLACING_DESTROYER = 3;
 	final int PLACING_SUBMARINE = 4;
 	final int PLACING_PATROL_BOAT = 5;
+	final int AIMING_SHOT = 6;
 	int state = NONE;
 	
+	int shipsPlaced = 0;
+	
 	public Game() {
-		frame.setSize(1200, 700);
+		frame.setSize(1400, 700);
 		frame.setLayout(new BorderLayout());
 		frame.add(panel, BorderLayout.CENTER);
 		
@@ -55,11 +62,18 @@ public class Game implements ActionListener, MouseListener{
 		east.add(shipOrientation);
 		frame.add(east, BorderLayout.EAST);
 		
+		west.setLayout(new GridLayout(2,1));
+		aimShotB.addActionListener(this);
+		aimShotB.setEnabled(false);
+		west.add(aimShotB);
+		frame.add(west, BorderLayout.WEST);
+		
 		placeCarrierB.setBackground(Color.LIGHT_GRAY);
 		placeBattleShipB.setBackground(Color.LIGHT_GRAY);
 		placeDestroyerB.setBackground(Color.LIGHT_GRAY);
 		placeSubmarineB.setBackground(Color.LIGHT_GRAY);
 		placePatrolB.setBackground(Color.LIGHT_GRAY);
+		aimShotB.setBackground(Color.LIGHT_GRAY);
 		
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.setVisible(true);
@@ -115,6 +129,11 @@ public class Game implements ActionListener, MouseListener{
 			placeSubmarineB.setBackground(Color.LIGHT_GRAY);
 			placePatrolB.setBackground(Color.GREEN);
 		}
+		if(e.getSource().equals(aimShotB))
+		{
+			aimShotB.setBackground(Color.GREEN);
+			state = AIMING_SHOT;
+		}
 		
 	}
 
@@ -127,30 +146,41 @@ public class Game implements ActionListener, MouseListener{
 	}
 
 	@Override
-	public void mouseReleased(MouseEvent e) {
-		if(state == PLACING_CARRIER){
+	public void mouseReleased(MouseEvent e) {//mouse clicked
+		if(state == PLACING_CARRIER){//place carrier
 			placeShip(e.getX(), e.getY(), new Carrier(1,1, 0), placeCarrierB);
 		}
-		else if(state == PLACING_BATTLESHIP)
+		else if(state == PLACING_BATTLESHIP)//place battleship
 		{
 			placeShip(e.getX(), e.getY(), new Battleship(1,1, 0), placeBattleShipB);
 		}
-		else if(state == PLACING_DESTROYER)
+		else if(state == PLACING_DESTROYER)//place destroyer
 		{
 			placeShip(e.getX(), e.getY(), new Destroyer(1,1, 0), placeDestroyerB);
 		}
-		else if(state == PLACING_SUBMARINE)
+		else if(state == PLACING_SUBMARINE)//place submarine
 		{
 			placeShip(e.getX(), e.getY(), new Submarine(1,1, 0), placeSubmarineB);
 		}
-		else if(state == PLACING_PATROL_BOAT)
+		else if(state == PLACING_PATROL_BOAT)//place patrol boat
 		{
 			placeShip(e.getX(), e.getY(), new PatrolBoat(1,1, 0), placePatrolB);
+		}
+		else if (state == AIMING_SHOT)
+		{
+			if(panel.takeShot(e.getX(), e.getY()))
+			{
+				frame.repaint();
+			}
+			else
+			{
+				JOptionPane.showMessageDialog(frame, "You have already shot there");
+			}
 		}
 		
 	}
 
-	public void placeShip(int mouseX, int mouseY, Ship newShip, JButton button)
+	public void placeShip(int mouseX, int mouseY, Ship newShip, JButton button)//attempts to place ship on the board
 	{
 		
 		String orientation = shipOrientation.getText();
@@ -163,8 +193,17 @@ public class Game implements ActionListener, MouseListener{
 			{//ship placed
 				frame.repaint();
 				button.setEnabled(false);
-				state = NONE;
+				shipsPlaced++;
 				button.setBackground(Color.LIGHT_GRAY);
+				if(shipsPlaced == 5)
+				{
+					aimShotB.setEnabled(true);
+					state = AIMING_SHOT;
+				}
+				else
+				{
+					state = NONE;
+				}
 			}
 			else
 			{//ship not placed
@@ -176,6 +215,8 @@ public class Game implements ActionListener, MouseListener{
 			JOptionPane.showMessageDialog(frame, "Invalid Orientation");
 		}
 	}
+	
+	
 	
 	@Override
 	public void mouseEntered(MouseEvent e) {
