@@ -2,6 +2,7 @@ package battleship.networking;
 
 import java.io.IOException;
 
+import battleship.networking.browsing.NetBrowserFrame;
 import battleship.networking.browsing.NetBrowserMessage;
 import battleship.networking.browsing.NetHostInfo;
 
@@ -20,7 +21,7 @@ public class NetTest {
 			e.printStackTrace();
 		}
 		
-//		new NetBrowserFrame();
+		new NetBrowserFrame();
 	}
 	public static void test(NetBrowserMessage s) throws ClassNotFoundException, IOException {
 		System.out.println(s);
