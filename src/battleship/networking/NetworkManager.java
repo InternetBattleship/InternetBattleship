@@ -21,7 +21,7 @@ public class NetworkManager {
 	private static final int HANDSHAKE_TARGET = 3;
 	
 	// Net Users
-	private NetUser self = new NetUser(), opponent = null;
+	private NetUser self = NetUser.Factory.random(), opponent = null;
 	public NetUser getMyNetUser() { return self; }
 	public NetUser getOpponentNetUser() { return opponent; }
 	
