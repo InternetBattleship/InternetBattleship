@@ -19,7 +19,7 @@ public class NetBrowserMessage implements Externalizable {
 	public static NetBrowserMessage fromBytes(byte[] bytes) throws ClassNotFoundException, IOException {
 		return Serialization.deserializeFromBytes(bytes);
 	}
-	public enum Type { SCAN, INFO; }
+	public enum Type { QUERY, INFO; }
 	private Type type = null;
 	public Type getType() { return type; }
 	private Object[] content = null;
@@ -34,7 +34,7 @@ public class NetBrowserMessage implements Externalizable {
 		case INFO:
 			suffix = getHostInfo().toString();
 			break;
-		case SCAN:
+		case QUERY:
 			suffix = "Scan";
 			break;
 		default:
@@ -51,8 +51,8 @@ public class NetBrowserMessage implements Externalizable {
 		}
 	}
 	public static class Factory {
-		public static NetBrowserMessage scan() {
-			return new NetBrowserMessage(Type.SCAN, null);
+		public static NetBrowserMessage query() {
+			return new NetBrowserMessage(Type.QUERY, null);
 		}
 		public static NetBrowserMessage hostInfo(NetHostInfo info) {
 			return new NetBrowserMessage(Type.INFO, new Object[] { info });

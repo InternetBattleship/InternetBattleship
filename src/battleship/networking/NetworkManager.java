@@ -20,8 +20,15 @@ public class NetworkManager {
 	
 	private static final int HANDSHAKE_TARGET = 3;
 	
+	public NetworkManager() {
+		this(NetUser.Factory.random());
+	}
+	public NetworkManager(NetUser self) {
+		this.self = self;
+	}
+	
 	// Net Users
-	private NetUser self = NetUser.Factory.random(), opponent = null;
+	private NetUser self = null, opponent = null;
 	public NetUser getMyNetUser() { return self; }
 	public NetUser getOpponentNetUser() { return opponent; }
 	
@@ -53,6 +60,18 @@ public class NetworkManager {
 		public void handshakeFailed(Socket s, NetHandshakeException e);
 		// Messaging
 		public void netMessageReceived(NetMessage nm);
+	}
+	public class ListenerAdapter implements Listener { // Listener outline
+		@Override public void connectionAttained(Socket s) { } // Connection received or initiated
+		@Override public void connectionClosed(Socket s) { }
+		@Override public void beganListening() { } // Server listening for incoming
+		@Override public void stoppedListening() { }
+		@Override public void refusedConnection(InetSocketAddress a) { }
+		@Override public void unresolvedAddress(InetSocketAddress a) { }
+		@Override public void connectionTimeout(InetSocketAddress a, int toMs) { }
+		@Override public void handshakeCompleted(Socket s) { }
+		@Override public void handshakeFailed(Socket s, NetHandshakeException e) { }
+		@Override public void netMessageReceived(NetMessage nm) { }
 	}
 
 	public String getStatusString() { // Displayed on UI
@@ -195,16 +214,24 @@ public class NetworkManager {
 		return socket != null && socket.isConnected() && (!socket.isClosed());
 	}
 	private Socket socket;
-	public void attemptConnection(String target, int port) { // Attempt a connection, subsequently create object I/O streams.
+	public boolean attemptConnection(String target, int port) { // Attempt a connection, subsequently create object I/O streams.
+		try {
+			InetAddress addr = InetAddress.getByName(target);
+			InetSocketAddress saddr = new InetSocketAddress(addr, port);
+			return attemptConnection(saddr);
+		} catch (UnknownHostException e) {
+			e.printStackTrace();
+		}
+		return false;
+	}
+	public boolean attemptConnection(InetSocketAddress saddr) { // Attempt a connection, subsequently create object I/O streams.
 		System.out.println("[attemptConnection] Connect!");
 		if (isConnected()) throw new IllegalStateException("Cannot attempt new connection: connection already established!");
 		Socket s = new Socket();
 		try {
-			InetAddress addr = InetAddress.getByName(target);
-			InetSocketAddress saddr = new InetSocketAddress(addr, port);
 			if (saddr.isUnresolved()) {
 				invokeListeners((l) -> l.unresolvedAddress(saddr));
-				return;
+				return false;
 			}
 			final int TIMEOUT = 3000; // TODO: Allow for user variable in timeout
 			try {
@@ -221,6 +248,7 @@ public class NetworkManager {
 				if (isListening()) stopListening();
 				makeStreams(false);
 				invokeListeners((l) -> l.connectionAttained(socket));
+				return true;
 			} else {
 				ois = null;
 				oos = null;
@@ -230,6 +258,7 @@ public class NetworkManager {
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		return false;
 	}
 	public boolean attemptDisconnect(boolean locallyInitiated) { // Destroy socket and streams of connection
 		System.out.println("[attemptDisconnect] Disconnect!");

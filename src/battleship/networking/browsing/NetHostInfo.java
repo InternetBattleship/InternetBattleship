@@ -11,14 +11,14 @@ import java.net.UnknownHostException;
 import battleship.networking.NetUser;
 
 public class NetHostInfo implements Externalizable {
-	public InetSocketAddress address = null;
+	public InetSocketAddress socketAddress = null;
 	public NetUser user = null;
 	
 	// Should only be used when deserializing
 	public NetHostInfo() { }
 	
 	public NetHostInfo(InetSocketAddress addr, NetUser host) {
-		this.address = addr;
+		this.socketAddress = addr;
 		this.user = host;
 	}
 	public static class Factory {
@@ -36,23 +36,24 @@ public class NetHostInfo implements Externalizable {
 	public String toString() {
 		return user.toString() + ", " + getIPAndPort();
 	}
-	public String getIP() { // Not sure if this is entirely reliable
-		return address.isUnresolved() ? 
-				address.getHostString() : 
-				address.getAddress().getHostAddress();
+	public NetUser user() { return user; }
+	public String ip() { // Not sure if this is entirely reliable
+		return socketAddress.isUnresolved() ? 
+				socketAddress.getHostString() : 
+				socketAddress.getAddress().getHostAddress();
 	}
-	public int getPort() {
-		return address.getPort();
+	public int port() {
+		return socketAddress.getPort();
 	}
  	public String getIPAndPort() {
-		return getIP() + ":" + getPort();
+		return ip() + ":" + port();
 	}
 	
 	@Override
 	public int hashCode() {
 		return (user.hashCode()*43) + 
-				(36*getIP().hashCode()) + // This is bad i should fix it
-				getPort();
+				(36*ip().hashCode()) + // This is bad i should fix it
+				port();
 	}
 	
 	@Override
@@ -60,15 +61,15 @@ public class NetHostInfo implements Externalizable {
 		if (!(o instanceof NetHostInfo)) return false;
 		NetHostInfo nhi = (NetHostInfo) o;
 		return nhi.user.equals(this.user) && 
-				nhi.getIP().equals(this.getIP()) &&  // This is bad i should fix it
-				nhi.getPort() == this.getPort();
+				nhi.ip().equals(this.ip()) &&  // This is bad i should fix it
+				nhi.port() == this.port();
 	}
 	@Override
 	public void writeExternal(ObjectOutput out) throws IOException {
-		String ip = address.getAddress().getHostAddress();
+		String ip = socketAddress.getAddress().getHostAddress();
 		out.writeInt(ip.length());
 		out.writeChars(ip);
-		out.writeInt(address.getPort());
+		out.writeInt(socketAddress.getPort());
 		out.writeObject(user);
 	}
 	@Override
@@ -77,7 +78,7 @@ public class NetHostInfo implements Externalizable {
 		String ip = "";
 		for (int i=0;i<ipLen;i++) ip += in.readChar();
 		int port = in.readInt();
-		address = InetSocketAddress.createUnresolved(ip, port);
+		socketAddress = InetSocketAddress.createUnresolved(ip, port);
 		user = (NetUser) in.readObject();
 	}
 }

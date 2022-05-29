@@ -34,7 +34,7 @@ public class NetConnectionFrame implements NetworkManager.Listener {
 	private NetworkManager manager; // Logic
 	
 	public NetConnectionFrame(NetworkManager m, JFrame parentFrame) {
-//		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter() {
 			@Override
 		    public void windowClosing(WindowEvent e) {

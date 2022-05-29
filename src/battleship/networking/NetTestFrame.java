@@ -1,7 +1,6 @@
 package battleship.networking;
 
 import java.awt.Color;
-import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.net.InetSocketAddress;
 import java.net.Socket;
@@ -10,7 +9,6 @@ import javax.swing.BorderFactory;
 import javax.swing.Box;
 import javax.swing.BoxLayout;
 import javax.swing.JButton;
-import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JPanel;
 import javax.swing.JSpinner;
@@ -22,11 +20,8 @@ import javax.swing.SwingUtilities;
 import layout.SpringUtilities;
 
 // This class currently serves as a basic connection client/server, also allows to chat with the opponent in its current state.
-// TODO: Add multicast scanning for LAN opponents, automatic detection of server ports and an array of buttons for each opponent.
-public class NetTestFrame implements NetworkManager.Listener {
+public class NetTestFrame extends JPanel implements NetworkManager.Listener {
 
-	// Frame
-	public JFrame frame = new JFrame("IBT");
 	public JLabel statusLabel = new JLabel("Not initialized");
 	
 	// IP/port
@@ -48,17 +43,14 @@ public class NetTestFrame implements NetworkManager.Listener {
 	
 	// UI/COMPONENT STRUCTURE
 	public NetTestFrame() { 
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		Container c = frame.getContentPane();
-		c.setLayout(new BoxLayout(c, BoxLayout.PAGE_AXIS));
-		frame.add(statusLabel);
-		frame.add(makeAddrPane());
-		frame.add(makeBtnPane());
+		super();
+		setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
+		add(statusLabel);
+		add(makeAddrPane());
+		add(makeBtnPane());
 		statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
 		statusLabel.setAlignmentX(0.5f);
 		setClientEnabled(false);
-		frame.pack();
-		frame.setVisible(true);
 		setManager(new NetworkManager());
 	}
 	private JPanel makeAddrPane() {
@@ -91,8 +83,6 @@ public class NetTestFrame implements NetworkManager.Listener {
 		if (manager == null) throw new IllegalArgumentException("Manager is null!");
 		connectionBtn.addActionListener(connectDisconnect);
 		serverBtn.addActionListener(listenClose);
-		frame.setTitle("IB - " + manager.getMyNetUser().toString());
-		System.out.println(frame.getTitle());
 		manager.addListener(this);
 		updateState();
 	}
@@ -129,7 +119,7 @@ public class NetTestFrame implements NetworkManager.Listener {
 	@Override
 	public void connectionAttained(Socket s) {
 		System.out.println("[Listener] connectionAttained");
-		new NetConnectionFrame(manager, frame);
+		new NetConnectionFrame(manager, null);
 	}
 	@Override
 	public void connectionClosed(Socket s) {
