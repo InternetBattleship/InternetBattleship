@@ -16,6 +16,8 @@ public class Ship {
 	int orientation = SOUTH;
 	int x;
 	int y;
+	int timesHit = 0;
+	boolean hasSunk = false;
 	Color shipColor = Color.blue;
 	
 	//getters and setters
@@ -101,6 +103,15 @@ public class Ship {
 
 		}
 		
+	}
+	
+	//adds a hit to the ship and checks if the ship has sunk
+	public void addHit() {
+		timesHit++;
+		if(timesHit == length)
+		{
+			hasSunk = true;
+		}
 	}
 }
 

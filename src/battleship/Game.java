@@ -171,6 +171,8 @@ public class Game implements ActionListener, MouseListener{
 			if(panel.takeShot(e.getX(), e.getY()))
 			{
 				frame.repaint();
+				state = NONE;
+				aimShotB.setBackground(Color.LIGHT_GRAY);
 			}
 			else
 			{
