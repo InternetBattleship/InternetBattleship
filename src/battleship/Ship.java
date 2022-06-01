@@ -30,7 +30,10 @@ public class Ship {
 		return orientation;
 	}
 
-
+	public boolean getHasSunk()
+	{
+		return hasSunk;
+	}
 
 	public void setOrientation(int newOrientation) {
 		orientation = newOrientation;
@@ -60,7 +63,7 @@ public class Ship {
 		this.y = y;
 	}
 
-	
+	//constructor
 	public Ship(int newX, int newY, int newOrientation){
 		x = newX;
 		y = newY;

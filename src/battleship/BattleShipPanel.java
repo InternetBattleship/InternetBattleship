@@ -37,6 +37,7 @@ public class BattleShipPanel extends JPanel{
 	{
 		super();
 		
+		//creates empty boards of the correct size
 		for(int i = 0; i < 10; i++)
 		{
 			ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
@@ -212,6 +213,10 @@ public class BattleShipPanel extends JPanel{
 			{
 				opposingBoard.get(boardX).set(boardY, new GameMove(true, boardX, boardY));
 				checkForShip(boardX + 1 , boardY + 1).addHit();
+				if(checkLoss())
+				{
+					System.out.println("Game Over");
+				}
 			}
 			else
 			{
@@ -323,6 +328,7 @@ public class BattleShipPanel extends JPanel{
 		{
 			ArrayList<int[]> shipCoords = getShipCoords(shipyard.get(i));
 			
+			//goes through every space any ship occupies and sees if any match the given coords
 			for(int j = 0; j < shipyard.get(i).getLength(); j++)
 			{
 				if(shipCoords.get(0)[j] == x && shipCoords.get(1)[j] == y)
@@ -334,6 +340,19 @@ public class BattleShipPanel extends JPanel{
 		return null;
 	}
 	
+	//checks if the player has lost
+	public boolean checkLoss()
+	{
+		for(int i = 0; i < shipyard.size(); i++)
+		{
+			if(!shipyard.get(i).hasSunk)
+			{
+				//if any of the ships haven't sunk returns false
+				return false;
+			}
+		}
+		return true;
+	}
 	
 	
 	

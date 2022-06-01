@@ -184,19 +184,24 @@ public class Game implements ActionListener, MouseListener{
 
 	public void placeShip(int mouseX, int mouseY, Ship newShip, JButton button)//attempts to place ship on the board
 	{
-		
+		//gets orientation given by user
 		String orientation = shipOrientation.getText();
+		
+		//checks if orientation is valid
 		if(orientation.toLowerCase().equals("north") || 
 				orientation.toLowerCase().equals("east") ||
 				orientation.toLowerCase().equals("south") ||
 				orientation.toLowerCase().equals("west"))
-		{//if orientation is valid
+		{
 			if(panel.addShip(mouseX, mouseY, orientation, newShip))
-			{//ship placed
+			{
+				//ship placed
 				frame.repaint();
 				button.setEnabled(false);
-				shipsPlaced++;
 				button.setBackground(Color.LIGHT_GRAY);
+				shipsPlaced++;
+				
+				//if all ships have been placed enables aiming shot
 				if(shipsPlaced == 5)
 				{
 					aimShotB.setEnabled(true);
@@ -208,12 +213,14 @@ public class Game implements ActionListener, MouseListener{
 				}
 			}
 			else
-			{//ship not placed
+			{
+				//ship not placed
 				JOptionPane.showMessageDialog(frame, "Ship does not fit there");
 			}
 		}
 		else
-		{//invalid orientation
+		{
+			//invalid orientation
 			JOptionPane.showMessageDialog(frame, "Invalid Orientation");
 		}
 	}
