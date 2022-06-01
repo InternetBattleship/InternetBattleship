@@ -6,24 +6,25 @@ import java.io.ObjectInput;
 import java.io.ObjectOutput;
 import java.util.Arrays;
 
-import battleship.networking.Serialization;
+import battleship.networking.messaging.NetUser;
+import battleship.networking.messaging.Serialization;
 
-public class NetBrowserMessage implements Externalizable {
+public class NetMulticastMessage implements Externalizable {
 	
 	// Should only be used when deserializing
-	public NetBrowserMessage() { }
+	public NetMulticastMessage() { }
 	
 	public byte[] getBytes() throws IOException {
 		return Serialization.serializeToBytes(this);
 	}
-	public static NetBrowserMessage fromBytes(byte[] bytes) throws ClassNotFoundException, IOException {
+	public static NetMulticastMessage fromBytes(byte[] bytes) throws ClassNotFoundException, IOException {
 		return Serialization.deserializeFromBytes(bytes);
 	}
-	public enum Type { QUERY, INFO; }
+	public enum Type { QUERY, INFORM, DISPOSE; }
 	private Type type = null;
 	public Type getType() { return type; }
 	private Object[] content = null;
-	private NetBrowserMessage(Type type, Object[] content) {
+	private NetMulticastMessage(Type type, Object[] content) {
 		this.type = type;
 		this.content = content;
 	}
@@ -31,11 +32,14 @@ public class NetBrowserMessage implements Externalizable {
 	public String toString() {
 		String suffix = "default suffix";
 		switch (type) {
-		case INFO:
-			suffix = getHostInfo().toString();
+		case INFORM:
+			suffix = "Inform, " + getHostInfo();
 			break;
 		case QUERY:
-			suffix = "Scan";
+			suffix = "Query";
+			break;
+		case DISPOSE:
+			suffix = "Dispose, " + getUser();
 			break;
 		default:
 			throw new IllegalArgumentException("Unknown type" + type.toString());
@@ -44,24 +48,35 @@ public class NetBrowserMessage implements Externalizable {
 	}
 	public NetHostInfo getHostInfo() {
 		switch (this.type) {
-		case INFO:
+		case INFORM:
 			return (NetHostInfo) content[0];
 		default:
-			throw new IllegalStateException("Unknown NetBrowserMessage.Type: " + type.toString());
+			throw new IllegalStateException("No NetHostInfo in: " + type.toString());
+		}
+	}
+	public NetUser getUser() {
+		switch (this.type) {
+		case DISPOSE:
+			return (NetUser) content[0];
+		default:
+			throw new IllegalStateException("No NetUser in: : " + type.toString());
 		}
 	}
 	public static class Factory {
-		public static NetBrowserMessage query() {
-			return new NetBrowserMessage(Type.QUERY, null);
+		public static NetMulticastMessage query() {
+			return new NetMulticastMessage(Type.QUERY, null);
 		}
-		public static NetBrowserMessage hostInfo(NetHostInfo info) {
-			return new NetBrowserMessage(Type.INFO, new Object[] { info });
+		public static NetMulticastMessage hostInfo(NetHostInfo info) {
+			return new NetMulticastMessage(Type.INFORM, new Object[] { info });
+		}
+		public static NetMulticastMessage dispose(NetUser user) {
+			return new NetMulticastMessage(Type.DISPOSE, new Object[] { user });
 		}
 	}
 	@Override
 	public boolean equals(Object obj) {
-		if (!(obj instanceof NetBrowserMessage)) return false;
-		NetBrowserMessage o = (NetBrowserMessage) obj;
+		if (!(obj instanceof NetMulticastMessage)) return false;
+		NetMulticastMessage o = (NetMulticastMessage) obj;
 		return Arrays.equals(content, o.content) && this.type.equals(o.type);
 	}
 	@Override

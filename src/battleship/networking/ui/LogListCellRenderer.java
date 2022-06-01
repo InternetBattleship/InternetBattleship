@@ -1,4 +1,4 @@
-package battleship.networking.log;
+package battleship.networking.ui;
 
 import java.awt.Color;
 import java.awt.Component;
@@ -9,6 +9,7 @@ import javax.swing.JList;
 import javax.swing.ListCellRenderer;
 import javax.swing.SwingConstants;
 
+import battleship.networking.log.LogMessage;
 import battleship.networking.log.LogMessage.Category;
 
 // This class draws the LogMessages in a list

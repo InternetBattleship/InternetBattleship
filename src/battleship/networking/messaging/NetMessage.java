@@ -1,4 +1,4 @@
-package battleship.networking;
+package battleship.networking.messaging;
 
 import java.io.Serializable;
 
@@ -14,7 +14,7 @@ public class NetMessage implements Serializable {
 	private Object[] content;
 	
 	// Content types
-	enum Category {
+	public enum Category {
 		HANDSHAKE, CONNECTION, CHAT, DISCONNECT; // TODO: Add a strike/missile option that contains a gameMove as content.
 	}
 	public boolean isHandshake() {

@@ -1,4 +1,4 @@
-package battleship.networking;
+package battleship.networking.messaging;
 
 public class NetHandshakeException extends Exception {
 

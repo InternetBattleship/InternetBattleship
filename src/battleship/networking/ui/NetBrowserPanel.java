@@ -1,4 +1,4 @@
-package battleship.networking.browsing;
+package battleship.networking.ui;
 
 import java.awt.Color;
 import java.awt.event.ActionListener;
@@ -17,9 +17,13 @@ import javax.swing.JList;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.ListSelectionModel;
-import javax.swing.SwingConstants;
 
-public class NetBrowserFrame extends JPanel {
+import battleship.networking.NetworkController;
+import battleship.networking.browsing.NetBrowserListModel;
+import battleship.networking.browsing.NetFinder;
+import battleship.networking.browsing.NetHostInfo;
+
+public class NetBrowserPanel extends JPanel {
 	
 	private JList<NetHostInfo> hostList;
 	private NetBrowserListModel model;
@@ -28,15 +32,15 @@ public class NetBrowserFrame extends JPanel {
 			queryBtn = new JButton("Query");
 	
 	// Underlying logic
-	private NetworkBrowser browser;
+	private NetFinder finder;
 	
-	public NetBrowserFrame() {
+	public NetBrowserPanel(NetworkController controller) {
 		super();
 		this.setLayout(new BoxLayout(this, BoxLayout.PAGE_AXIS));
 		
 		this.add(makeHostPanel());
 		this.add(makeBtnPanel());
-		setBrowser(new NetworkBrowser());
+		setBrowser(new NetFinder(controller));
 	}
 	private MouseAdapter connectionAttempter = new MouseAdapter() {
 		@Override
@@ -47,7 +51,7 @@ public class NetBrowserFrame extends JPanel {
 	private void attemptConnectionToSelected() {
 		NetHostInfo sel = hostList.getSelectedValue();
 		if (sel == null) return;
-		browser.attemptConnection(sel);
+		finder.attemptConnection(sel);
 	}
 	
 	private JPanel makeHostPanel() {
@@ -73,18 +77,19 @@ public class NetBrowserFrame extends JPanel {
 			queryAction = (e) -> {
 			new Thread(() -> {
 				try {
-					browser.query();
+					finder.query();
 				} catch (IOException ex) {
 					ex.printStackTrace();
 				}
 			}).start();
 		}, clearAction = (e) -> {
-			browser.clearCache();
+			finder.clearCache();
 		};
 	
 	private JPanel makeBtnPanel() {
 		JPanel btnPanel = new JPanel();
 		BoxLayout layout = new BoxLayout(btnPanel, BoxLayout.LINE_AXIS);
+		btnPanel.setLayout(layout);
 		
 		btnPanel.add(connectBtn);
 		btnPanel.add(Box.createHorizontalGlue());
@@ -96,10 +101,10 @@ public class NetBrowserFrame extends JPanel {
 		return btnPanel;
 	}
 	// ASSIGN LOGIC
-	public void setBrowser(NetworkBrowser m) { // Fill structure with content from underlying logic
-		browser = m;
-		if (browser == null) throw new IllegalArgumentException("Browser is null!");
-		model = new NetBrowserListModel(browser);
+	public void setBrowser(NetFinder m) { // Fill structure with content from underlying logic
+		finder = m;
+		if (finder == null) throw new IllegalArgumentException("Browser is null!");
+		model = new NetBrowserListModel(finder);
 		hostList.setModel(model);
 		hostList.addMouseListener(connectionAttempter);
 		hostList.addListSelectionListener((e) -> updateConnectBtnState());
@@ -108,7 +113,6 @@ public class NetBrowserFrame extends JPanel {
 		queryBtn.addActionListener(queryAction);
 		
 		updateConnectBtnState();
-		browser.listen();
 	}
 	
 	private void updateConnectBtnState() {

@@ -1,4 +1,4 @@
-package battleship.networking;
+package battleship.networking.messaging;
 
 import java.io.Externalizable;
 import java.io.IOException;

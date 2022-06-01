@@ -8,7 +8,7 @@ import java.net.InetAddress;
 import java.net.InetSocketAddress;
 import java.net.UnknownHostException;
 
-import battleship.networking.NetUser;
+import battleship.networking.messaging.NetUser;
 
 public class NetHostInfo implements Externalizable {
 	public InetSocketAddress socketAddress = null;

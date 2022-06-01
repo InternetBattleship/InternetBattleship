@@ -2,11 +2,11 @@ package battleship.networking.browsing;
 
 import javax.swing.AbstractListModel;
 
-public class NetBrowserListModel extends AbstractListModel<NetHostInfo> implements NetworkBrowser.Listener {
+public class NetBrowserListModel extends AbstractListModel<NetHostInfo> implements NetFinder.Listener {
 
-	private NetworkBrowser browser;
+	private NetFinder browser;
 	
-	public NetBrowserListModel(NetworkBrowser b) {
+	public NetBrowserListModel(NetFinder b) {
 		browser = b;
 		browser.addListener(this);
 		browser.refreshListeners();
