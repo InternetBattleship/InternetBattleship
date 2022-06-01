@@ -72,16 +72,19 @@ public class NetServerPanel extends JPanel implements NetServer.Listener {
 
 	@Override
 	public void connectionReceived(NetConnection c) {
+		System.out.println("[NetServerPanel] connectionReceived");
 		updateState();
 	}
 
 	@Override
 	public void beganListening() {
+		System.out.println("[NetServerPanel] beganListening");
 		updateState();
 	}
 
 	@Override
 	public void stoppedListening() {
+		System.out.println("[NetServerPanel] stoppedListening");
 		updateState();
 	}
 	

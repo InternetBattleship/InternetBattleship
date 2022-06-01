@@ -79,26 +79,19 @@ public class NetServer {
 				try {
 					System.out.println("[NetServer.listenConcurrently] Accepting...");
 					Socket s = server.accept();
+					listening = false;
 					NetConnection c = new NetConnection(self, s, true);
 					invokeListeners((l) -> l.connectionReceived(c));
 				} catch (SocketException e) {
 					System.err.println("Server socket closed successfully!");
-					intl_closeListener();
 				}
-				server.close();
 			} catch (IOException e) {
 				e.printStackTrace();
 			}
-			intl_closeListener();
+			listening = false;
 			invokeListeners((l) -> l.stoppedListening());
 		}, "ServerListenerThread");
 		listenerThread.start();
-	}
-	
-	private void intl_closeListener() {
-		listening = false;
-		server = null;
-		info = null;
 	}
 	
 	public void stopListening() { // Halt the thread listening for new connections and destroy server socket

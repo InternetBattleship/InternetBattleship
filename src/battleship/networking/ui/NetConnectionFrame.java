@@ -47,6 +47,7 @@ public class NetConnectionFrame implements NetConnection.Listener {
 				System.out.println("Closed");
 			}
 		});
+		
 		Container c = frame.getContentPane();
 		c.setLayout(new BoxLayout(c, BoxLayout.PAGE_AXIS));
 		statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -59,13 +60,17 @@ public class NetConnectionFrame implements NetConnection.Listener {
 		frame.setVisible(true);
 		setConnection(con);
 	}
+	
 	public void dispose() {
+		connection.disconnect(true);
 		frame.dispose();
 	}
+	
 	private static final Color CONNECTED_COL = new Color(0,127,0), ERROR_COL = new Color(255,0,0);
 	private void updateStatus() {
 		setStatus(connection.getStatus(), connection.isConnected() ? CONNECTED_COL : ERROR_COL);
 	}
+	
 	public void setStatus(String str, Color c) {
 		SwingUtilities.invokeLater(() -> {
 			statusLabel.setForeground(c);
@@ -80,8 +85,8 @@ public class NetConnectionFrame implements NetConnection.Listener {
 		return jsp;
 	}
 	public void setConnection(NetConnection c) {
+		if (connection == null) throw new IllegalArgumentException("Connection is null!");
 		connection = c;
-		if (connection == null) throw new IllegalArgumentException("Manager is null!");
 		frame.setTitle("IB - " + connection.getSelf());
 		connection.addListener(this);
 		chatField.addActionListener(sendChat);
@@ -114,56 +119,20 @@ public class NetConnectionFrame implements NetConnection.Listener {
 		}
 	}
 
-//	@Override
-//	public void connectionAttained(NetConnection c) { 
-//		lm.add(LogMessage.networkLog("Connection attained!", true));
-//	}
-//	@Override
-//	public void connectionClosed(NetConnection s) { 
-//		lm.add(LogMessage.networkLog("Connection closed!", false));
-//	}
-//	@Override
-//	public void beganListening() { 
-//		lm.add(LogMessage.networkLog("Listening...", true));
-//	}
-//	@Override
-//	public void stoppedListening() { 
-//		lm.add(LogMessage.networkLog("Stopped listening.", false));
-//	}
-//	@Override
-//	public void refusedConnection(InetSocketAddress addr) { 
-//		lm.add(LogMessage.networkLog("Refused connection: " + addr.getHostString() + ":" + addr.getPort(), false));
-//	}
-//	@Override
-//	public void unresolvedAddress(InetSocketAddress addr) { 
-//		lm.add(LogMessage.networkLog("Unresolved Address: " + addr.getHostString() + ":" + addr.getPort(), false));
-//	}
-//	@Override
-//	public void connectionTimeout(InetSocketAddress addr, int toMs) {
-//		lm.add(LogMessage.networkLog("Connection timed out: " + addr.getHostString() + ":" + addr.getPort() + " after " + toMs + "ms", false));
-//	}
 	@Override
 	public void handshakeFailed(Socket s, NetHandshakeException e) {
+		System.err.println("[NetConnectionFrame] Handshake Failed");
 		lm.add(LogMessage.networkLog("Handshake failed: " + e.getMessage(), false));
 	}
 	@Override
 	public void handshakeCompleted(Socket s) {
+		System.out.println("[NetConnectionFrame] Handshake Completed!");
 		lm.add(LogMessage.networkLog("Handshake completed!", true));
 	}
 
 	@Override
 	public void netMessageReceived(NetMessage nm) {
 		logNetMessage(nm);
-		switch (nm.getCategory()) {
-//		case CONNECTION:
-//		case DISCONNECT:
-//			updateStatus();
-//			break;
-		default:
-			updateStatus();
-			System.out.println("Received NetMessage");
-			break;
-		}
 	}
 
 }

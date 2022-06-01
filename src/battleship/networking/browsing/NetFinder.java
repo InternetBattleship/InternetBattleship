@@ -97,11 +97,7 @@ public class NetFinder implements NetMulticaster.Listener {
 	}
 	
 	public void attemptConnection(NetHostInfo i) {
-		if (controller.attemptConnection(i)) {
-			new NetConnectionFrame(controller.getConnection(), null);
-		} else {
-			System.out.println("Failure");
-		}
+		controller.attemptConnection(i);
 	}
 	@Override
 	public void startedMulticastListening() { }

@@ -40,13 +40,6 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 		public void unresolvedAddress(InetSocketAddress a);
 		public void connectionTimeout(InetSocketAddress a, int toMs);
 	}
-	public class ListenerAdapter implements Listener { // Listener outline
-		@Override public void connectionAttained(NetConnection c) { } // Connection received or initiated
-		@Override public void connectionClosed(NetConnection c) { }
-		@Override public void refusedConnection(InetSocketAddress a) { }
-		@Override public void unresolvedAddress(InetSocketAddress a) { }
-		@Override public void connectionTimeout(InetSocketAddress a, int toMs) { }
-	}
 	
 	// Net Users
 	private NetUser self = null;
@@ -114,8 +107,10 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 				invokeListeners((l) -> l.connectionAttained(connection));
 				return true;
 			} catch (ConnectException ex) {
+				ex.printStackTrace();
 				invokeListeners((l) -> l.refusedConnection(saddr));
 			} catch (SocketTimeoutException ex) {
+				ex.printStackTrace();
 				invokeListeners((l) -> l.connectionTimeout(saddr, TIMEOUT));
 			}
 		} catch (UnknownHostException e) {
@@ -166,6 +161,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	public void netMessageReceived(NetMessage nm) {
 		System.out.println("NetworkController.NMR: " + nm);
 	}
+	
 	// Server
 	@Override
 	public void connectionReceived(NetConnection c) {
