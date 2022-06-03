@@ -168,7 +168,7 @@ public class Game implements ActionListener, MouseListener{
 		}
 		else if (state == AIMING_SHOT)
 		{
-			if(panel.takeShot(e.getX(), e.getY()))
+			if(panel.takeShot(e.getX(), e.getY()))//also check whose turn it is
 			{
 				frame.repaint();
 				state = NONE;
@@ -205,7 +205,7 @@ public class Game implements ActionListener, MouseListener{
 				if(shipsPlaced == 5)
 				{
 					aimShotB.setEnabled(true);
-					state = AIMING_SHOT;
+					state = NONE;
 				}
 				else
 				{
