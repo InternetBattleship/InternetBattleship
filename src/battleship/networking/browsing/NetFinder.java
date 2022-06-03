@@ -6,7 +6,6 @@ import java.util.ArrayList;
 import battleship.networking.NetServer;
 import battleship.networking.NetworkController;
 import battleship.networking.messaging.NetUser;
-import battleship.networking.ui.NetConnectionFrame;
 
 public class NetFinder implements NetMulticaster.Listener {
 

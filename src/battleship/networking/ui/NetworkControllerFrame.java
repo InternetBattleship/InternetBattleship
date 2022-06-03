@@ -1,7 +1,5 @@
 package battleship.networking.ui;
 
-import java.net.InetSocketAddress;
-
 import javax.swing.BoxLayout;
 import javax.swing.JFrame;
 import javax.swing.JTabbedPane;
@@ -34,24 +32,15 @@ public class NetworkControllerFrame implements NetworkController.Listener {
 
 	@Override
 	public void connectionAttained(NetConnection c) {
-		System.err.println("[NetworkControllerFrame] connectionAttained");
+		System.out.println("[NetworkControllerFrame] connectionAttained");
 		new NetConnectionFrame(c, frame);
 	}
 	@Override
 	public void connectionClosed(NetConnection c) {
 		System.err.println("[NetworkControllerFrame] connectionClosed");
 	}
-	@Override
-	public void refusedConnection(InetSocketAddress a) {
-		System.err.println("[NetworkControllerFrame] refusedConnection");
+	public void connectionException(Exception e) {
+		System.err.println("[NetworkControllerFrame] connectionError");
+		e.printStackTrace();
 	}
-	@Override
-	public void unresolvedAddress(InetSocketAddress a) {
-		System.err.println("[NetworkControllerFrame] unresolvedAddress");
-	}
-	@Override
-	public void connectionTimeout(InetSocketAddress a, int toMs) {
-		System.err.println("[NetworkControllerFrame] connectionTimeout");
-	}
-	
 }

@@ -36,9 +36,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 		public void connectionAttained(NetConnection c); // Connection received or initiated
 		public void connectionClosed(NetConnection c);
 		// Errors:
-		public void refusedConnection(InetSocketAddress a);
-		public void unresolvedAddress(InetSocketAddress a);
-		public void connectionTimeout(InetSocketAddress a, int toMs);
+		public void connectionException(Exception e);
 	}
 	
 	// Net Users
@@ -92,7 +90,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 		if (givenSaddr.isUnresolved()) {
 			saddr = new InetSocketAddress(givenSaddr.getAddress(), givenSaddr.getPort());
 			if (saddr.isUnresolved()) {
-				invokeListeners((l) -> l.unresolvedAddress(saddr));
+				invokeListeners((l) -> l.connectionException(new Exception(saddr.toString())));
 				return false;
 			}
 		} else {
@@ -108,10 +106,10 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 				return true;
 			} catch (ConnectException ex) {
 				ex.printStackTrace();
-				invokeListeners((l) -> l.refusedConnection(saddr));
+				invokeListeners((l) -> l.connectionException(ex));
 			} catch (SocketTimeoutException ex) {
 				ex.printStackTrace();
-				invokeListeners((l) -> l.connectionTimeout(saddr, TIMEOUT));
+				invokeListeners((l) -> l.connectionException(ex));
 			}
 		} catch (UnknownHostException e) {
 			e.printStackTrace();

@@ -69,4 +69,9 @@ public class NetMessage implements Serializable {
 		}
 	}
 	
+	@Override
+	public String toString() {
+		return "NetMessage: " + category.toString();
+	}
+	
 }

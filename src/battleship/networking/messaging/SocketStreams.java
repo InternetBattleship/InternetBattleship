@@ -60,14 +60,14 @@ public class SocketStreams {
 		try {
 			// Setup streams
 			oos = new ObjectOutputStream(sock.getOutputStream());
-//			oos.flush();
+			oos.flush();
 			ois = new ObjectInputStream(sock.getInputStream());
 			
 			// Listen on input stream
 			inputThread = makeInputThread();
 			inputThread.start();
 		} catch (EOFException e) {
-			System.err.println("EOFException!");
+			System.err.println("[SocketStreams] EOFException!");
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -89,8 +89,11 @@ public class SocketStreams {
 		} catch(EOFException e) {
 			System.err.println("[SocketStreams.receiveObject()] EOFException");
 			close();
-		} catch (Exception e) {
-			throw new IllegalArgumentException(e);
+		} catch (ClassNotFoundException e) {
+			System.err.println("[SocketStreams.receiveObject()] ClassNotFoundException");
+		} catch (IOException e) {
+			e.printStackTrace();
+			close();
 		}
 		return o;
 	}

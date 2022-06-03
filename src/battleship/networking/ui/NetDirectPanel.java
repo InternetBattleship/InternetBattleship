@@ -1,7 +1,6 @@
 package battleship.networking.ui;
 
 import java.awt.event.ActionListener;
-import java.net.InetSocketAddress;
 
 import javax.swing.BorderFactory;
 import javax.swing.Box;
@@ -108,14 +107,7 @@ public class NetDirectPanel extends JPanel implements NetworkController.Listener
 		updateState();
 	}
 	@Override
-	public void refusedConnection(InetSocketAddress addr) { 
-		updateState();
-	}
-	@Override
-	public void unresolvedAddress(InetSocketAddress addr) { 
-		updateState();
-	}
-	public void connectionTimeout(InetSocketAddress addr, int toMs) {
+	public void connectionException(Exception e) {
 		updateState();
 	}
 	

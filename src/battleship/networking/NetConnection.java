@@ -50,7 +50,7 @@ public class NetConnection implements SocketStreams.Listener {
 		
 		this.self = self;
 		this.socket = socket;
-		sockStreams = new SocketStreams(socket);
+		sockStreams = new SocketStreams(this.socket);
 		sockStreams.addListener(this);
 		
 		// Start handshake
