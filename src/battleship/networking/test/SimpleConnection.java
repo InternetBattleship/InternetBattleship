@@ -1,19 +1,31 @@
 package battleship.networking.test;
 
-import java.net.Socket;
 import java.util.Scanner;
 
 import battleship.networking.NetConnection;
 import battleship.networking.NetworkController;
-import battleship.networking.messaging.NetHandshakeException;
 import battleship.networking.messaging.NetMessage;
 
-public class SimpleConnection implements NetworkController.Listener, NetConnection.Listener {
+public class SimpleConnection implements NetConnection.Listener {
 
 	public static Scanner console;
 	
 	public static void main(String args[]) {
 		NetworkController ctrl = new NetworkController();
+		ctrl.addListener(new NetworkController.Listener() {
+			public void connectionAttained(NetConnection c) {
+				System.out.println("[SimpleConnection] connectionAttained");
+				new SimpleConnection(c, console);
+			}
+			public void connectionClosed(NetConnection c) {
+				System.out.println("[SimpleConnection] connectionClosed");
+				
+			}
+			public void connectionException(Exception e) {
+				System.err.println("[SimpleConnection] connectionException: " + e.getMessage());
+				
+			}
+		});
 		console = new Scanner(System.in);
 		String addr = null;
 		int port = -1;
@@ -47,40 +59,15 @@ public class SimpleConnection implements NetworkController.Listener, NetConnecti
 
 	// Connection listener
 	@Override
-	public void handshakeCompleted(Socket s) {
-		System.out.println("[SimpleConnection] handshakeCompleted");
-		
-	}
-
-	@Override
-	public void handshakeFailed(Socket s, NetHandshakeException e) {
-		System.out.println("[SimpleConnection] handshakeFailed: " + e.getMessage());
-		
-	}
-
-	@Override
 	public void netMessageReceived(NetMessage nm) {
 		System.out.println("[SimpleConnection] netMessageReceieved: " + nm.toString());
-	}
-
-	
-	// Controller listener
-	@Override
-	public void connectionAttained(NetConnection c) {
-		System.out.println("[SimpleConnection] connectionAttained");
-		new SimpleConnection(c, console);
-	}
-
-	@Override
-	public void connectionClosed(NetConnection c) {
-		System.out.println("[SimpleConnection] connectionClosed");
-		
-	}
-
-	@Override
-	public void connectionException(Exception e) {
-		System.err.println("[SimpleConnection] connectionException: " + e.getMessage());
-		
+		switch (nm.getCategory()) {
+		case CHAT:
+			System.out.println("Received: " + nm.getMessage());
+			break;
+		default:
+			break;
+		}
 	}
 	
 }

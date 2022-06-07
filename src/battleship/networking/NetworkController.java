@@ -152,10 +152,6 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	
 	// Connection
 	@Override
-	public void handshakeCompleted(Socket s) { }
-	@Override
-	public void handshakeFailed(Socket s, NetHandshakeException e) { }
-	@Override
 	public void netMessageReceived(NetMessage nm) {
 		System.out.println("NetworkController.NMR: " + nm);
 	}

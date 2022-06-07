@@ -120,17 +120,6 @@ public class NetConnectionFrame implements NetConnection.Listener {
 	}
 
 	@Override
-	public void handshakeFailed(Socket s, NetHandshakeException e) {
-		System.err.println("[NetConnectionFrame] Handshake Failed");
-		lm.add(LogMessage.networkLog("Handshake failed: " + e.getMessage(), false));
-	}
-	@Override
-	public void handshakeCompleted(Socket s) {
-		System.out.println("[NetConnectionFrame] Handshake Completed!");
-		lm.add(LogMessage.networkLog("Handshake completed!", true));
-	}
-
-	@Override
 	public void netMessageReceived(NetMessage nm) {
 		logNetMessage(nm);
 	}

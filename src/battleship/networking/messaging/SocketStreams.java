@@ -63,6 +63,7 @@ public class SocketStreams {
 			oos.flush();
 			ois = new ObjectInputStream(sock.getInputStream());
 			
+			
 			// Listen on input stream
 			inputThread = makeInputThread();
 			inputThread.start();
