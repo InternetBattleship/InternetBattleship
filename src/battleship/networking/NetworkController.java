@@ -12,7 +12,6 @@ import java.util.ArrayList;
 import battleship.networking.browsing.NetFinder;
 import battleship.networking.browsing.NetHostInfo;
 import battleship.networking.browsing.NetMulticaster;
-import battleship.networking.messaging.NetHandshakeException;
 import battleship.networking.messaging.NetMessage;
 import battleship.networking.messaging.NetUser;
 
@@ -96,12 +95,9 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 		} else {
 			saddr = givenSaddr;
 		}
-		final Socket s = new Socket();
 		try {
-			final int TIMEOUT = 3000; // TODO: Allow for user variable in timeout
-			try (s) {
-				s.connect(saddr, TIMEOUT); 
-				acquireConnection(new NetConnection(self, s, false));
+			try (Socket s = new Socket(saddr.getAddress(), saddr.getPort())) {
+				acquireConnection(new NetConnection(this, s, false));
 				invokeListeners((l) -> l.connectionAttained(connection));
 				return true;
 			} catch (ConnectException ex) {
@@ -119,6 +115,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 		return false;
 	}
 	private void acquireConnection(NetConnection c) {
+		System.out.println("[NetworkController.acquireConnection]");
 		connection = c;
 		connection.addListener(this);
 		if (isListening()) server.stopListening();
@@ -159,6 +156,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	// Server
 	@Override
 	public void connectionReceived(NetConnection c) {
+		System.out.println("[NetworkController.connectionReceived()]");
 		acquireConnection(c);
 	}
 	@Override

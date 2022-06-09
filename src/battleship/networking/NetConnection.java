@@ -27,21 +27,22 @@ public class NetConnection implements SocketStreams.Listener {
 		public void netMessageReceived(NetMessage nm);
 	}
 	
-	private NetUser self = null, opponent = null;
-	public NetUser getSelf() { return self; }
+	private NetworkController controller = null;
+	private NetUser opponent = null;
+	public NetUser getSelf() { return controller.getSelf(); }
 	public NetUser getOpponent() { return opponent; }
 
 	private Socket socket;	
 	private SocketStreams sockStreams;
 	
-	public NetConnection(NetUser self, Socket socket, boolean isHost) {
+	public NetConnection(NetworkController ctrl, Socket socket, boolean isHost) {
 		if (socket == null) throw new IllegalArgumentException("Socket is null!");
 		System.out.println("[NetConnection] Constructor: " + socket);
-		if (self == null) throw new IllegalArgumentException("User is null!");
+		if (ctrl == null) throw new IllegalArgumentException("Controller is null!");
 		if (!socket.isConnected()) throw new IllegalArgumentException("Socket isn't connected!");
 		if (socket.isClosed()) throw new IllegalArgumentException("Socket is closed!");
 		
-		this.self = self;
+		this.controller = ctrl;
 		this.socket = socket;
 		sockStreams = new SocketStreams(this.socket);
 		sockStreams.addListener(this);

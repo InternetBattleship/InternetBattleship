@@ -63,7 +63,6 @@ public class SocketStreams {
 			oos.flush();
 			ois = new ObjectInputStream(sock.getInputStream());
 			
-			
 			// Listen on input stream
 			inputThread = makeInputThread();
 			inputThread.start();
@@ -94,7 +93,6 @@ public class SocketStreams {
 			System.err.println("[SocketStreams.receiveObject()] ClassNotFoundException");
 		} catch (IOException e) {
 			e.printStackTrace();
-			close();
 		}
 		return o;
 	}
@@ -104,9 +102,9 @@ public class SocketStreams {
 			ois.close();
 			oos.close();
 			sock.close();
+			invokeListeners((l) -> l.streamsClosed(sock));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
-		invokeListeners((l) -> l.streamsClosed(sock));
 	}
 }

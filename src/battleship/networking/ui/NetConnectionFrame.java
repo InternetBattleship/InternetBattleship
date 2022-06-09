@@ -5,7 +5,6 @@ import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.net.Socket;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -20,7 +19,6 @@ import javax.swing.SwingUtilities;
 import battleship.networking.NetConnection;
 import battleship.networking.log.LogListModel;
 import battleship.networking.log.LogMessage;
-import battleship.networking.messaging.NetHandshakeException;
 import battleship.networking.messaging.NetMessage;
 
 public class NetConnectionFrame implements NetConnection.Listener {
@@ -40,14 +38,19 @@ public class NetConnectionFrame implements NetConnection.Listener {
 			@Override
 		    public void windowClosing(WindowEvent e) {
 				System.out.println("Closing");
-				dispose();
+				try {
+					dispose();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
 			@Override
 		    public void windowClosed(WindowEvent e) {
 				System.out.println("Closed");
 			}
 		});
-		
+
+		setConnection(con);
 		Container c = frame.getContentPane();
 		c.setLayout(new BoxLayout(c, BoxLayout.PAGE_AXIS));
 		statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -58,7 +61,6 @@ public class NetConnectionFrame implements NetConnection.Listener {
 		frame.setLocationRelativeTo(parentFrame);
 		frame.pack();
 		frame.setVisible(true);
-		setConnection(con);
 	}
 	
 	public void dispose() {
@@ -85,7 +87,7 @@ public class NetConnectionFrame implements NetConnection.Listener {
 		return jsp;
 	}
 	public void setConnection(NetConnection c) {
-		if (connection == null) throw new IllegalArgumentException("Connection is null!");
+		if (c == null) throw new IllegalArgumentException("Connection is null!");
 		connection = c;
 		frame.setTitle("IB - " + connection.getSelf());
 		connection.addListener(this);

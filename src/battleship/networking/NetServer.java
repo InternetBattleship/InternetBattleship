@@ -80,7 +80,7 @@ public class NetServer {
 					System.out.println("[NetServer.listenConcurrently] Accepting...");
 					Socket s = server.accept();
 					listening = false;
-					NetConnection c = new NetConnection(self, s, true);
+					NetConnection c = new NetConnection(controller, s, true);
 					invokeListeners((l) -> l.connectionReceived(c));
 				} catch (SocketException e) {
 					System.err.println("Server socket closed successfully!");

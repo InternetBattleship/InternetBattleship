@@ -31,7 +31,7 @@ public class SimpleConnection implements NetConnection.Listener {
 		int port = -1;
 		boolean looking = true;
 		while (looking) {
-			System.out.println("\n    Connect: ");
+			System.out.println("[ Connect ]");
 			System.out.print("IP/hostname: ");
 			addr = console.nextLine();
 			System.out.print("Port: ");
@@ -45,6 +45,9 @@ public class SimpleConnection implements NetConnection.Listener {
 			if (ctrl.attemptConnection(addr, port)) looking = false;
 		}
 	}
+	public SimpleConnection(NetConnection c) {
+		this(c, new Scanner(System.in));
+	}
 	
 	private NetConnection con;
 	public SimpleConnection(NetConnection c, Scanner console) {
@@ -55,6 +58,7 @@ public class SimpleConnection implements NetConnection.Listener {
 			System.out.println("[SimpleConnection] Sending: " + msg);
 			c.sendNetMessage(NetMessage.Factory.chat(msg));
 		}
+		console.close();
 	}
 
 	// Connection listener
