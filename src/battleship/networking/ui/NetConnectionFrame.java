@@ -1,12 +1,10 @@
-package battleship.networking;
+package battleship.networking.ui;
 
 import java.awt.Color;
 import java.awt.Container;
 import java.awt.event.ActionListener;
 import java.awt.event.WindowAdapter;
 import java.awt.event.WindowEvent;
-import java.net.InetSocketAddress;
-import java.net.Socket;
 
 import javax.swing.BorderFactory;
 import javax.swing.BoxLayout;
@@ -18,11 +16,12 @@ import javax.swing.JScrollPane;
 import javax.swing.JTextField;
 import javax.swing.SwingUtilities;
 
-import battleship.networking.log.LogListCellRenderer;
+import battleship.networking.NetConnection;
 import battleship.networking.log.LogListModel;
 import battleship.networking.log.LogMessage;
+import battleship.networking.messaging.NetMessage;
 
-public class NetConnectionFrame implements NetworkManager.Listener {
+public class NetConnectionFrame implements NetConnection.Listener {
 	
 	public JFrame frame = new JFrame("IBConnection"); // JFrame
 	public JLabel statusLabel = new JLabel("Not initialized"); // Status label
@@ -31,21 +30,27 @@ public class NetConnectionFrame implements NetworkManager.Listener {
 	private JList<LogMessage> logList = new JList<LogMessage>(lm); // TODO: Fix weird bug with all items disappearing sometimes	
 	public JTextField chatField = new JTextField();
 	
-	private NetworkManager manager; // Logic
+	private NetConnection connection; // Logic
 	
-	public NetConnectionFrame(NetworkManager m, JFrame parentFrame) {
+	public NetConnectionFrame(NetConnection con, JFrame parentFrame) {
 		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
 		frame.addWindowListener(new WindowAdapter() {
 			@Override
 		    public void windowClosing(WindowEvent e) {
 				System.out.println("Closing");
-				dispose();
+				try {
+					dispose();
+				} catch (Exception ex) {
+					ex.printStackTrace();
+				}
 			}
 			@Override
 		    public void windowClosed(WindowEvent e) {
 				System.out.println("Closed");
 			}
 		});
+
+		setConnection(con);
 		Container c = frame.getContentPane();
 		c.setLayout(new BoxLayout(c, BoxLayout.PAGE_AXIS));
 		statusLabel.setBorder(BorderFactory.createEmptyBorder(5, 5, 5, 5));
@@ -56,15 +61,18 @@ public class NetConnectionFrame implements NetworkManager.Listener {
 		frame.setLocationRelativeTo(parentFrame);
 		frame.pack();
 		frame.setVisible(true);
-		setManager(m);
 	}
+	
 	public void dispose() {
+		connection.disconnect(true);
 		frame.dispose();
 	}
+	
 	private static final Color CONNECTED_COL = new Color(0,127,0), ERROR_COL = new Color(255,0,0);
 	private void updateStatus() {
-		setStatus(manager.getStatusString(), manager.isConnected() ? CONNECTED_COL : ERROR_COL);
+		setStatus(connection.getStatus(), connection.isConnected() ? CONNECTED_COL : ERROR_COL);
 	}
+	
 	public void setStatus(String str, Color c) {
 		SwingUtilities.invokeLater(() -> {
 			statusLabel.setForeground(c);
@@ -78,11 +86,11 @@ public class NetConnectionFrame implements NetworkManager.Listener {
 		jsp.setAutoscrolls(true);
 		return jsp;
 	}
-	public void setManager(NetworkManager m) {
-		manager = m;
-		if (manager == null) throw new IllegalArgumentException("Manager is null!");
-		frame.setTitle("IB - " + manager.getMyNetUser().toString());
-		manager.addListener(this);
+	public void setConnection(NetConnection c) {
+		if (c == null) throw new IllegalArgumentException("Connection is null!");
+		connection = c;
+		frame.setTitle("IB - " + connection.getSelf());
+		connection.addListener(this);
 		chatField.addActionListener(sendChat);
 		updateStatus();
 	}
@@ -91,13 +99,11 @@ public class NetConnectionFrame implements NetworkManager.Listener {
 				String msg = chatField.getText().trim();
 				if (msg.length() > 0) sendNetMessage(NetMessage.Factory.chat(msg));
 				chatField.setText("");
-//				if (e.getSource() instanceof JTextField)
-//					((JTextField)e.getSource()).setText("");
 			};
 
 	public void sendNetMessage(NetMessage nm) {
 		logNetMessage(nm);
-		manager.sendNetMessage(nm);
+		connection.sendNetMessage(nm);
 	}
 	public void logNetMessage(NetMessage nm) {
 		switch (nm.getCategory()) {
@@ -116,55 +122,8 @@ public class NetConnectionFrame implements NetworkManager.Listener {
 	}
 
 	@Override
-	public void connectionAttained(Socket s) { 
-		lm.add(LogMessage.networkLog("Connection attained!", true));
-	}
-	@Override
-	public void connectionClosed(Socket s) { 
-		lm.add(LogMessage.networkLog("Connection closed!", false));
-	}
-	@Override
-	public void beganListening() { 
-		lm.add(LogMessage.networkLog("Listening...", true));
-	}
-	@Override
-	public void stoppedListening() { 
-		lm.add(LogMessage.networkLog("Stopped listening.", false));
-	}
-	@Override
-	public void refusedConnection(InetSocketAddress addr) { 
-		lm.add(LogMessage.networkLog("Refused connection: " + addr.getHostString() + ":" + addr.getPort(), false));
-	}
-	@Override
-	public void unresolvedAddress(InetSocketAddress addr) { 
-		lm.add(LogMessage.networkLog("Unresolved Address: " + addr.getHostString() + ":" + addr.getPort(), false));
-	}
-	@Override
-	public void connectionTimeout(InetSocketAddress addr, int toMs) {
-		lm.add(LogMessage.networkLog("Connection timed out: " + addr.getHostString() + ":" + addr.getPort() + " after " + toMs + "ms", false));
-	}
-	@Override
-	public void handshakeFailed(Socket s, NetHandshakeException e) {
-		lm.add(LogMessage.networkLog("Handshake failed: " + e.getMessage(), false));
-	}
-	@Override
-	public void handshakeCompleted(Socket s) {
-		lm.add(LogMessage.networkLog("Handshake completed!", true));
-	}
-
-	@Override
 	public void netMessageReceived(NetMessage nm) {
 		logNetMessage(nm);
-		switch (nm.getCategory()) {
-//		case CONNECTION:
-//		case DISCONNECT:
-//			updateStatus();
-//			break;
-		default:
-			updateStatus();
-			System.out.println("Received NetMessage");
-			break;
-		}
 	}
 
 }
