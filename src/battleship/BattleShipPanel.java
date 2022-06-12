@@ -209,9 +209,13 @@ public class BattleShipPanel extends JPanel{
 		//note, currently this function checks the players own board for testing, this will not be the case in final version
 		if(opposingBoard.get(boardX).get(boardY) == null)
 		{
+			//make gamemove
+			GameMove move = new GameMove(x, y);
+			//send move to opponent
+			
 			if(checkForShip(boardX + 1 , boardY + 1) != null)//this line needs to be changed to check opponents board
 			{
-				opposingBoard.get(boardX).set(boardY, new GameMove(true, boardX, boardY));
+				opposingBoard.get(boardX).set(boardY, move);
 				checkForShip(boardX + 1 , boardY + 1).addHit();
 				if(checkLoss())
 				{
@@ -220,7 +224,7 @@ public class BattleShipPanel extends JPanel{
 			}
 			else
 			{
-				opposingBoard.get(boardX).set(boardY, new GameMove(false, boardX, boardY));
+				opposingBoard.get(boardX).set(boardY, new GameMove(boardX, boardY));
 			}
 			return true;
 		}
