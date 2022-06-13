@@ -2,9 +2,6 @@ package battleship;
 
 public class GameMove {
 	
-	/*
-	 * This class is just skeleton so I can figure out how to render the moves on the board
-	 */
 	
 	boolean hit = false;
 	int x;
@@ -72,8 +69,13 @@ public class GameMove {
 	public void getResponse()
 	{
 		//send x and y get back a string
-		response = "1110";
+		response = "1110";//change this to actually get the response
 	}
 	
+	public void setResponse(String newResponse)
+	{
+		//send x and y get back a string
+		response = newResponse;//change this to actually get the response
+	}
 	
 }

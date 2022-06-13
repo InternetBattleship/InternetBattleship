@@ -210,21 +210,20 @@ public class BattleShipPanel extends JPanel{
 		if(opposingBoard.get(boardX).get(boardY) == null)
 		{
 			//make gamemove
-			GameMove move = new GameMove(x, y);
-			//send move to opponent
+			GameMove move = new GameMove(boardX, boardY);
 			
-			if(checkForShip(boardX + 1 , boardY + 1) != null)//this line needs to be changed to check opponents board
+			
+			//**************************************
+			//this line makes the player play against them self
+			move.setResponse(recieveShot(boardX, boardY));
+			//************************************
+			
+			
+			//places move on board
+			opposingBoard.get(boardX).set(boardY, move);
+			if(move.getWin())
 			{
-				opposingBoard.get(boardX).set(boardY, move);
-				checkForShip(boardX + 1 , boardY + 1).addHit();
-				if(checkLoss())
-				{
-					System.out.println("Game Over");
-				}
-			}
-			else
-			{
-				opposingBoard.get(boardX).set(boardY, new GameMove(boardX, boardY));
+				System.out.println("Game Over");
 			}
 			return true;
 		}
@@ -232,6 +231,55 @@ public class BattleShipPanel extends JPanel{
 		{
 			return false;
 		}
+	}
+	
+	//Receive shot
+	public String recieveShot(int x, int y)
+	{
+		//output string
+		String out = "";
+		Ship shipHit = checkForShip(x +1, y +1);
+		
+		//if a ship was hit
+		if(shipHit != null)
+		{
+			//hit
+			shipHit.addHit();
+			
+			//if ship has sunk
+			if(shipHit.getHasSunk())
+			{
+				//sunk
+				out = out + "1" + "1" +  shipHit.getType();
+			}
+			else
+			{
+				//not sunk
+				out = out + "1" + "0" +  shipHit.getType();
+			}
+		}
+		else
+		{
+			//miss
+			out = out + "000";
+		}
+		
+		if(checkLoss())
+		{
+			out = out + "1";
+		}
+		else
+		{
+			out = out + "0";
+		}
+		
+		//adds move to gameboard
+		GameMove move = new GameMove(x, y);
+		move.setResponse(out);
+		gameBoard.get(x).set(y, move);
+		
+		//returns response
+		return out;
 	}
 	
 	public boolean isIntersecting(Ship shipOne, int x, int y, int orientation)//checks if a ship at given location will intersect with any other ship
@@ -358,6 +406,21 @@ public class BattleShipPanel extends JPanel{
 		return true;
 	}
 	
-	
+	//resets the boards
+	public void resetBoard()
+	{
+		shipyard = new ArrayList<Ship>();
+		//creates empty boards of the correct size
+				for(int i = 0; i < 10; i++)
+				{
+					ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
+					for(int j = 0; j < 10; j++)
+					{
+						blankArray.add(null);
+					}
+					gameBoard.add((ArrayList<GameMove>) blankArray.clone());
+					opposingBoard.add(blankArray);
+				}
+	}
 	
 }

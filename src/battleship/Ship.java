@@ -13,6 +13,7 @@ public class Ship {
 	
 	//variables
 	int length;
+	int type;
 	int orientation = SOUTH;
 	int x;
 	int y;
@@ -25,6 +26,9 @@ public class Ship {
 		return length;
 	}
 
+	public int getType() {
+		return type;
+	}
 
 	public int getOrientation() {
 		return orientation;

@@ -6,6 +6,7 @@ public class PatrolBoat extends Ship {
 	public PatrolBoat(int newX, int newY, int newOrientation){
 		super(newX, newY, newOrientation);
 		length = 2;
+		type = 0;
 		shipColor = new Color(200, 200, 200);
 	}
 }

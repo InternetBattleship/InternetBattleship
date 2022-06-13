@@ -181,6 +181,7 @@ public class Game implements ActionListener, MouseListener{
 		}
 		
 	}
+	
 
 	public void placeShip(int mouseX, int mouseY, Ship newShip, JButton button)//attempts to place ship on the board
 	{
@@ -204,6 +205,12 @@ public class Game implements ActionListener, MouseListener{
 				//if all ships have been placed enables aiming shot
 				if(shipsPlaced == 5)
 				{
+					/*
+					 * Send signal to other player that this player is ready
+					 * check who's going first. Enables the button for whoever is going first
+					 */
+					
+					
 					aimShotB.setEnabled(true);
 					state = NONE;
 				}
@@ -233,5 +240,35 @@ public class Game implements ActionListener, MouseListener{
 
 	@Override
 	public void mouseExited(MouseEvent e) {
+	}
+	
+	//resets the game
+	public void reset(boolean didWin)
+	{
+		//resets the game and gives a win or loss message
+		if(didWin)
+		{
+			JOptionPane.showMessageDialog(frame, "You won!");
+		}
+		else
+		{
+			JOptionPane.showMessageDialog(frame, "You Lost");
+		}
+		
+		placeCarrierB.setBackground(Color.LIGHT_GRAY);
+		placeBattleShipB.setBackground(Color.LIGHT_GRAY);
+		placeDestroyerB.setBackground(Color.LIGHT_GRAY);
+		placeSubmarineB.setBackground(Color.LIGHT_GRAY);
+		placePatrolB.setBackground(Color.LIGHT_GRAY);
+		aimShotB.setBackground(Color.LIGHT_GRAY);
+		
+		placeCarrierB.setEnabled(true);
+		placeBattleShipB.setEnabled(true);
+		placeDestroyerB.setEnabled(true);
+		placeSubmarineB.setEnabled(true);
+		placePatrolB.setEnabled(true);
+		aimShotB.setEnabled(false);
+		
+		state = NONE;
 	}
 }
