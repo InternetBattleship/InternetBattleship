@@ -1,12 +1,5 @@
 package battleship.networking;
 
-import java.io.IOException;
-import java.net.ConnectException;
-import java.net.InetAddress;
-import java.net.InetSocketAddress;
-import java.net.Socket;
-import java.net.SocketTimeoutException;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 
 import battleship.networking.messaging.NetMessage;
@@ -58,46 +51,18 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	}
 
 	public void attemptConnection(String target, int port) { // Attempt a connection, subsequently create object I/O streams.
-		System.out.println("[attemptConnection] " + target + ":" + port);
-		try {
-			InetAddress addr = InetAddress.getByName(target);
-			InetSocketAddress saddr = new InetSocketAddress(addr, port);
-			attemptConnection(saddr);
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-		}
-	}
-
-	public void attemptConnection(InetSocketAddress givenSaddr) { // Attempt a connection, subsequently create object I/O streams.
 		System.out.println("[attemptConnection] Connect!");
 		if (isConnected()) throw new IllegalStateException("Cannot attempt new connection: connection already established!");
-		final InetSocketAddress saddr;
-		if (givenSaddr.isUnresolved()) {
-			saddr = new InetSocketAddress(givenSaddr.getAddress(), givenSaddr.getPort());
-			if (saddr.isUnresolved()) {
-				invokeListeners((l) -> l.connectionException(new Exception(saddr.toString())));
-				return;
-			}
-		} else {
-			saddr = givenSaddr;
-		}
-		try (Socket s = new Socket(saddr.getAddress(), saddr.getPort())) {
-			acquireConnection(new NetConnection(this, s, false));
-			invokeListeners((l) -> l.connectionAttained(connection));
-		} catch (ConnectException ex) {
-			ex.printStackTrace();
-			invokeListeners((l) -> l.connectionException(ex));
-		} catch (SocketTimeoutException ex) {
-			ex.printStackTrace();
-			invokeListeners((l) -> l.connectionException(ex));
-		} catch (UnknownHostException e) {
-			e.printStackTrace();
-			invokeListeners((l) -> l.connectionException(e));
-		} catch (IOException e) {
-			e.printStackTrace();
+		connection = null;
+		try {
+			NetConnection c = NetConnection.connectTo(this, target, port);
+			connection = c;
+		} catch (Exception e) {
 			invokeListeners((l) -> l.connectionException(e));
 		}
+		invokeListeners((l) -> l.connectionAttained(connection));
 	}
+
 	private void acquireConnection(NetConnection c) {
 		System.out.println("[NetworkController.acquireConnection]");
 		connection = c;

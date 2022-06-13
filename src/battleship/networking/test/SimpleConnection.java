@@ -2,7 +2,6 @@ package battleship.networking.test;
 
 import java.util.Scanner;
 
-import battleship.Game;
 import battleship.networking.NetConnection;
 import battleship.networking.NetworkController;
 import battleship.networking.messaging.NetMessage;
@@ -54,15 +53,14 @@ public class SimpleConnection implements NetConnection.Listener {
 	public SimpleConnection(NetConnection c, Scanner console) {
 		con = c;
 		con.addListener(this);
-//		while (con.isConnected()) {
-//			String msg = console.nextLine().trim();
-//			if (msg.length() > 0) {
-//				System.out.println("[SimpleConnection] S: " + msg);
-//				c.sendNetMessage(NetMessage.Factory.chat(msg));
-//			}
-//		}
+		while (con.isConnected()) {
+			String msg = console.nextLine().trim();
+			if (msg.length() > 0) {
+				System.out.println("[SimpleConnection] S: " + msg);
+				c.sendNetMessage(NetMessage.Factory.chat(msg));
+			}
+		}
 		console.close();
-		new Game(c);
 	}
 
 	// Connection listener

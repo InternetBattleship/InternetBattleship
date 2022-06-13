@@ -15,23 +15,7 @@ public class NetMessage implements Serializable {
 	
 	// Content types
 	public enum Category {
-		HANDSHAKE, CONNECTION, CHAT, DISCONNECT; // TODO: Add a strike/missile option that contains a gameMove as content.
-	}
-	public boolean isHandshake() {
-		switch (category) {
-		case HANDSHAKE:
-			return true;
-		default:
-			return false;
-		}
-	}
-	public int getHandshakeStage() {
-		switch (category) {
-		case HANDSHAKE:
-			return (int) content[0]; 
-		default:
-			throw new IllegalStateException("Cannot get stage of non-handshake NetMessage!");
-		}
+		CONNECTION, CHAT; // TODO: Add a strike/missile option that contains a gameMove as content.
 	}
 	public String getMessage() { 
 		switch (category) {
@@ -55,17 +39,11 @@ public class NetMessage implements Serializable {
 		this.content = content;
 	}
 	public static class Factory {
-		public static NetMessage handshake(int stage) {
-			return new NetMessage(Category.HANDSHAKE, new Object[] { stage });
-		}
 		public static NetMessage connection(NetUser greet) {
 			return new NetMessage(Category.CONNECTION, new Object[] { greet });
 		}
 		public static NetMessage chat(String msg) {
 			return new NetMessage(Category.CHAT, new Object[] { msg });
-		}
-		public static NetMessage disconnect() {
-			return new NetMessage(Category.DISCONNECT, null);
 		}
 	}
 	

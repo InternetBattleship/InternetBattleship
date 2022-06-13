@@ -41,11 +41,9 @@ public class NetServer {
 		this.controller = c;
 		this.self = c.getSelf();
 	}
-	
 	public String getStatus() {
 		return isListening() ? "Listening at " + getLocalIPString() + ":" + getListenPort() : "Inactive";
 	}
-	
 	public boolean canListen() {
 		return !controller.isConnected();
 	}
@@ -54,9 +52,11 @@ public class NetServer {
 	public boolean isListening() { // returns true if currently accepting incoming connections
 		return server != null && listening;
 	}
+	
 	private ServerSocket server; // Server socket to listen for incoming connections
 	private Thread listenerThread; // Thread which listens for connections
 	public int getListenPort() { return server.getLocalPort(); }
+	
 	public String getLocalIPString() { // Returns host ip as a string
 		try {
 			return Inet4Address.getLocalHost().getHostAddress().toString();
@@ -66,28 +66,31 @@ public class NetServer {
 		return "ERR.ORF.OUN.Djm";
 	}
 	public void listenConcurrently() { // Listen for new connections on another thread
-		listenerThread = new Thread(() -> {
-			listening = true;
-			try {
-				server = new ServerSocket(0);
-				invokeListeners((l) -> l.beganListening());
-				try {
-					System.out.println("[NetServer.listenConcurrently] Accepting...");
-					Socket s = server.accept();
-					listening = false;
-					NetConnection c = new NetConnection(controller, s, true);
-					invokeListeners((l) -> l.connectionReceived(c));
-				} catch (SocketException e) {
-					System.err.println("Server socket closed successfully!");
-				}
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-			listening = false;
-			invokeListeners((l) -> l.stoppedListening());
-		}, "ServerListenerThread");
+		if (listenerThread != null && listenerThread.isAlive()) throw new IllegalStateException("Already listening!");
+		listening = false;
+		listenerThread = new Thread(listenRunnable, "ServerListenerThread");
 		listenerThread.start();
 	}
+	private Runnable listenRunnable = () -> {
+		listening = true;
+		try {
+			server = new ServerSocket(0); // Automatically assigned to open port on machine
+			invokeListeners((l) -> l.beganListening()); // Began listening
+			try {
+				System.out.println("[NetServer.listenConcurrently] Accepting...");
+				Socket s = server.accept();
+				listening = false;
+				NetConnection c = new NetConnection(controller, s, true);
+				invokeListeners((l) -> l.connectionReceived(c));
+			} catch (SocketException e) {
+				System.err.println("Server socket closed successfully!");
+			}
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		listening = false;
+		invokeListeners((l) -> l.stoppedListening());
+	};
 	
 	public void stopListening() { // Halt the thread listening for new connections and destroy server socket
 		if (!isListening()) throw new IllegalStateException("Can't stop listening: was never listening.");

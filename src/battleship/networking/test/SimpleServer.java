@@ -7,7 +7,6 @@ import battleship.networking.NetworkController;
 public class SimpleServer implements NetServer.Listener {
 	public static void main(String args[]) {
 		NetworkController ctrl = new NetworkController();
-		
 		new SimpleServer(ctrl);
 	}
 	

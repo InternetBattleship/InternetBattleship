@@ -29,79 +29,68 @@ public class NetConnection implements SocketStreams.Listener {
 	}
 	public interface Listener { // Listener outline
 		// State
-		public void connectionBegan();
+		public void connectionBegan(); // Sent after greeting received, from NetworkInputThread
 		public void connectionStopped();
 		
 		// Messaging
-		public void netMessageReceived(NetMessage nm);
+		public void netMessageReceived(NetMessage nm); // from NetworkInputThread
 	}
 	
-	private NetworkController controller = null;
-	private NetUser opponent = null;
-	public NetUser getSelf() { return controller.getSelf(); }
+	// Initiating client-side connections
+	public static NetConnection connectTo(NetworkController ctrl, String addr, int port) throws Exception {
+		try (Socket s = new Socket(addr, port)) {
+			NetConnection c = new NetConnection(ctrl, s, false);
+			return c;
+		} catch (Exception ex) {
+			ex.printStackTrace();
+			throw ex;
+		}
+	}
+	
+	// Network identities
+	private boolean greeted = false; // Opponent has sent their identity, must be first message
+	private NetUser self = null, opponent = null;
+	public NetUser getSelf() { return self; }
 	public NetUser getOpponent() { return opponent; }
 
-	private Socket socket;	
-	private SocketStreams sockStreams;
+	private SocketStreams sockStreams; // All socket usage contained within this property
 	
 	public NetConnection(NetworkController ctrl, Socket socket, boolean isHost) {
-		if (socket == null) throw new IllegalArgumentException("Socket is null!");
-		System.out.println("[NetConnection] Constructor: " + socket);
-		if (ctrl == null) throw new IllegalArgumentException("Controller is null!");
-		if (!socket.isConnected()) throw new IllegalArgumentException("Socket isn't connected!");
-		if (socket.isClosed()) throw new IllegalArgumentException("Socket is closed!");
-		
-		this.controller = ctrl;
-		this.socket = socket;
-		sockStreams = new SocketStreams(this.socket);
+		self = ctrl.getSelf();
+		this.addListener(ctrl);
+		sockStreams = new SocketStreams(socket);
 		sockStreams.addListener(this);
-	}
-	public String getStatus() {
-		return "Connected to " + getOpponent();
-	}
-	public boolean isConnected() {
-		return socket != null && socket.isConnected() && (!socket.isClosed());
-	}
-	public boolean disconnect(boolean localOrigin) {
-		System.out.println("[NetConnection] Disconnect, local: " + localOrigin);
-		/*
-		if (socket == null) throw new IllegalStateException("Socket is null");
-		if (!socket.isConnected()) throw new IllegalStateException("Socket was never connected");
-		if (socket.isClosed()) throw new IllegalStateException("Socket is already closed");
-		if (localOrigin) sendNetMessage(NetMessage.Factory.disconnect());
-		boolean closedSuccessfully = false;
-		try {
-			socket.close();
-			closedSuccessfully = true;
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
-		socket = null;
-		sockStreams = null;
-		return closedSuccessfully; */ return false;
+		sendNetMessage(NetMessage.Factory.connection(self));
 	}
 	
-
-	private void handleNetMessage(NetMessage nm) {
-		switch (nm.getCategory()) {
-		case CONNECTION:
-			opponent = nm.getGreeting();
-			break;
-		case DISCONNECT:
-			disconnect(false);
-			break;
-		default:
-			invokeListeners((l) -> l.netMessageReceived(nm));
-			break;
+	// Connection state reporting/management
+	public String getStatus() {
+		if (isConnected()) {
+			return "Connected to " + getOpponent();
+		} else {
+			return "Connection is inactive";
 		}
 	}
-	public void sendNetMessage(NetMessage nm) { // Send a message through object stream to the opponent
-		sockStreams.sendObject(nm);
+	public boolean isConnected() {
+		return sockStreams.isActive();
+	}
+	public boolean disconnect(boolean localOrigin) {
+//		for (StackTraceElement e : Thread.currentThread().getStackTrace()) System.out.println(e);
+		System.out.println("[NetConnection] Disconnect, local: " + localOrigin);
+		sockStreams.close();
+		invokeListeners((l) -> l.connectionStopped());
+		return false;
 	}
 	@Override
 	public void streamsClosed(Socket s) {
 		disconnect(false);
 	}
+	
+	// Message sending/receiving
+	public void sendNetMessage(NetMessage nm) { // Send a message through object stream to the opponent
+		sockStreams.sendObject(nm);
+	}
+	
 	@Override
 	public void objectReceived(Object o) {
 		if (!(o instanceof NetMessage)) {
@@ -110,5 +99,19 @@ public class NetConnection implements SocketStreams.Listener {
 		}
 		final NetMessage nm = (NetMessage) o;
 		handleNetMessage(nm);
+	}
+	private void handleNetMessage(NetMessage nm) {
+		switch (nm.getCategory()) {
+		case CONNECTION:
+			opponent = nm.getGreeting();
+			if (opponent == null) throw new IllegalStateException("Greeted with null!");
+			greeted = true;
+			invokeListeners((l)->l.connectionBegan());
+			break;
+		default:
+			if (!greeted) throw new IllegalStateException(nm.getCategory() + " type receieved before greeting occured!");
+			break;
+		}
+		invokeListeners((l) -> l.netMessageReceived(nm));
 	}
 }
