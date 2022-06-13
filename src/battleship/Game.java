@@ -14,8 +14,6 @@ import javax.swing.JFrame;
 import javax.swing.JOptionPane;
 import javax.swing.JTextField;
 
-import battleship.networking.NetConnection;
-
 public class Game implements ActionListener, MouseListener {
 	
 	BattleShipPanel panel = new BattleShipPanel();
@@ -45,12 +43,7 @@ public class Game implements ActionListener, MouseListener {
 	
 	int shipsPlaced = 0;
 	
-	private NetConnection con;
-	
-	public Game(NetConnection c) {
-		if (c == null) throw new IllegalArgumentException("Connection is null!");
-		con = c;
-		
+	public Game() {
 		frame.setSize(1400, 700);
 		frame.setLayout(new BorderLayout());
 		frame.add(panel, BorderLayout.CENTER);
