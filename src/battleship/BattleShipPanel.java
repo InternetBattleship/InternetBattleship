@@ -201,13 +201,13 @@ public class BattleShipPanel extends JPanel{
 	}
 	
 	//takes a shot
-	public boolean takeShot(int x, int y) //true means the shot was successfully fired
+	public GameMove takeShot(int x, int y) //true means the shot was successfully fired
 	{
 		int boardX = ((x - leftBoardX)/(boardSize/10));
 		int boardY = ((y - leftBoardY)/(boardSize/10));
 		
 		//note, currently this function checks the players own board for testing, this will not be the case in final version
-		if(opposingBoard.get(boardX).get(boardY) == null)
+		if(boardX < 10 && boardX >= 0 && boardY < 10 && boardY >= 0 && opposingBoard.get(boardX).get(boardY) == null)
 		{
 			//make gamemove
 			GameMove move = new GameMove(boardX, boardY);
@@ -225,11 +225,11 @@ public class BattleShipPanel extends JPanel{
 			{
 				System.out.println("Game Over");
 			}
-			return true;
+			return move;
 		}
 		else
 		{
-			return false;
+			return null;
 		}
 	}
 	
@@ -410,17 +410,21 @@ public class BattleShipPanel extends JPanel{
 	public void resetBoard()
 	{
 		shipyard = new ArrayList<Ship>();
+		
+		opposingBoard = new ArrayList<ArrayList<GameMove>>();
+		gameBoard = new ArrayList<ArrayList<GameMove>>();
+		
 		//creates empty boards of the correct size
-				for(int i = 0; i < 10; i++)
-				{
-					ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
-					for(int j = 0; j < 10; j++)
-					{
-						blankArray.add(null);
-					}
-					gameBoard.add((ArrayList<GameMove>) blankArray.clone());
-					opposingBoard.add(blankArray);
-				}
+		for(int i = 0; i < 10; i++)
+		{
+			ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
+			for(int j = 0; j < 10; j++)
+			{
+				blankArray.add(null);
+			}
+			gameBoard.add((ArrayList<GameMove>) blankArray.clone());
+			opposingBoard.add(blankArray);
+		}
 	}
 	
 }

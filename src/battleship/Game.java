@@ -168,15 +168,26 @@ public class Game implements ActionListener, MouseListener{
 		}
 		else if (state == AIMING_SHOT)
 		{
-			if(panel.takeShot(e.getX(), e.getY()))//also check whose turn it is
+			GameMove shot = panel.takeShot(e.getX(), e.getY());
+			
+			if(shot != null)//also check whose turn it is
 			{
 				frame.repaint();
 				state = NONE;
 				aimShotB.setBackground(Color.LIGHT_GRAY);
+				
+				if(shot.getHit() && shot.getSunk())
+				{
+					JOptionPane.showMessageDialog(frame, "You sunk their " + shot.getShip());
+				}
+				if(shot.getWin())
+				{
+					reset(true);
+				}
 			}
 			else
 			{
-				JOptionPane.showMessageDialog(frame, "You have already shot there");
+				JOptionPane.showMessageDialog(frame, "You cannot shoot there");
 			}
 		}
 		
@@ -270,5 +281,8 @@ public class Game implements ActionListener, MouseListener{
 		aimShotB.setEnabled(false);
 		
 		state = NONE;
+		panel.resetBoard();
+		frame.repaint();
+		shipsPlaced = 0;
 	}
 }
