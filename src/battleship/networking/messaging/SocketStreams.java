@@ -75,22 +75,33 @@ public class SocketStreams {
 	private Thread makeInputThread() {
 		return new Thread(() -> {
 			while (isConnected()) {
+				try {
 				final Object o = receiveObject();
-				invokeListeners((l) -> l.objectReceived(o));
+					invokeListeners((l) -> l.objectReceived(o));
+				} catch (IllegalStateException e) {
+					e.printStackTrace();
+				}
 			}
 			invokeListeners((l) -> l.streamsClosed(sock));
 		}, "NetworkInputStreamReader");
 		
 	}
-	private Object receiveObject() {
+	private Object receiveObject() throws IllegalStateException{
 		Object o = null;
 		try {
 			o = ois.readObject();
+		} catch (SocketException e) {
+			System.err.println("[SocketStreams] Socket closed!");
+			close();
+			throw new IllegalStateException(e);
 		} catch(EOFException e) {
 			System.err.println("[SocketStreams.receiveObject()] EOFException");
 			close();
+			throw new IllegalStateException(e);
 		} catch (ClassNotFoundException e) {
 			System.err.println("[SocketStreams.receiveObject()] ClassNotFoundException");
+			close();
+			throw new IllegalStateException(e);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
@@ -102,9 +113,9 @@ public class SocketStreams {
 			ois.close();
 			oos.close();
 			sock.close();
-			invokeListeners((l) -> l.streamsClosed(sock));
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+		invokeListeners((l) -> l.streamsClosed(sock));
 	}
 }

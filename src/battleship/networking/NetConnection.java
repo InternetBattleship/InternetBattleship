@@ -1,6 +1,5 @@
 package battleship.networking;
 
-import java.io.IOException;
 import java.net.Socket;
 import java.util.ArrayList;
 
@@ -13,7 +12,13 @@ public class NetConnection implements SocketStreams.Listener {
 	// LISTENERS
 	private ArrayList<Listener> listeners = new ArrayList<Listener>(); // List
 	// Add/remove
-	public void addListener(Listener l) { listeners.add(0, l); } 
+	public void addListener(Listener l) { 
+		if (listeners.contains(l)) {
+			System.err.println("[NetConnection.addListener] Redundant add!");
+		} else {
+			listeners.add(0, l);
+		}
+	} 
 	public boolean removeListener(Listener l) { return listeners.remove(l); }
 	// Invoking
 	public void invokeListeners(ListenerInvoker li) {
@@ -23,6 +28,10 @@ public class NetConnection implements SocketStreams.Listener {
 		public void invoke(Listener l);
 	}
 	public interface Listener { // Listener outline
+		// State
+		public void connectionBegan();
+		public void connectionStopped();
+		
 		// Messaging
 		public void netMessageReceived(NetMessage nm);
 	}
@@ -46,9 +55,6 @@ public class NetConnection implements SocketStreams.Listener {
 		this.socket = socket;
 		sockStreams = new SocketStreams(this.socket);
 		sockStreams.addListener(this);
-		
-		if (!socket.isConnected()) throw new IllegalArgumentException("Socket isn't connected!");
-		if (socket.isClosed()) throw new IllegalArgumentException("Socket is closed!");
 	}
 	public String getStatus() {
 		return "Connected to " + getOpponent();
@@ -58,6 +64,7 @@ public class NetConnection implements SocketStreams.Listener {
 	}
 	public boolean disconnect(boolean localOrigin) {
 		System.out.println("[NetConnection] Disconnect, local: " + localOrigin);
+		/*
 		if (socket == null) throw new IllegalStateException("Socket is null");
 		if (!socket.isConnected()) throw new IllegalStateException("Socket was never connected");
 		if (socket.isClosed()) throw new IllegalStateException("Socket is already closed");
@@ -71,7 +78,7 @@ public class NetConnection implements SocketStreams.Listener {
 		}
 		socket = null;
 		sockStreams = null;
-		return closedSuccessfully;
+		return closedSuccessfully; */ return false;
 	}
 	
 

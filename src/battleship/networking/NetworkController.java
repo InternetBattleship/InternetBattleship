@@ -9,9 +9,6 @@ import java.net.SocketTimeoutException;
 import java.net.UnknownHostException;
 import java.util.ArrayList;
 
-import battleship.networking.browsing.NetFinder;
-import battleship.networking.browsing.NetHostInfo;
-import battleship.networking.browsing.NetMulticaster;
 import battleship.networking.messaging.NetMessage;
 import battleship.networking.messaging.NetUser;
 
@@ -33,8 +30,8 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	public interface Listener { // Listener outline
 		// Connection
 		public void connectionAttained(NetConnection c); // Connection received or initiated
-		public void connectionClosed(NetConnection c);
-		// Errors:
+		public void connectionClosed(NetConnection c); // Connection closed, by user-input or network error
+		// Errors: (sent in addition to connectionClosed, or before connectionAttained would occur)
 		public void connectionException(Exception e);
 	}
 	
@@ -45,10 +42,6 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	// Services
 	private NetServer server = null;
 	public NetServer getServer() { return server; }
-	private NetMulticaster multicaster = null;
-	public NetMulticaster getMulticaster() { return multicaster; }
-	private NetFinder netFinder = null;
-	public NetFinder getNetFinder() { return netFinder; }
 	
 	// Connection
 	private NetConnection connection = null;
@@ -60,29 +53,22 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	public NetworkController(NetUser self) {
 		if (self == null) throw new IllegalArgumentException("User is null!");
 		this.self = self;
-		multicaster = new NetMulticaster("227.145.62.176", 34837);
-		netFinder = new NetFinder(this);
 		server = new NetServer(this);
-		
 		server.addListener(this);
 	}
 
-	public boolean attemptConnection(String target, int port) { // Attempt a connection, subsequently create object I/O streams.
+	public void attemptConnection(String target, int port) { // Attempt a connection, subsequently create object I/O streams.
 		System.out.println("[attemptConnection] " + target + ":" + port);
 		try {
 			InetAddress addr = InetAddress.getByName(target);
 			InetSocketAddress saddr = new InetSocketAddress(addr, port);
-			return attemptConnection(saddr);
+			attemptConnection(saddr);
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
 		}
-		return false;
 	}
-	public boolean attemptConnection(NetHostInfo nhi) {
-		System.out.println("[attemptConnection] " + nhi);
-		return attemptConnection(nhi.socketAddress);
-	}
-	public boolean attemptConnection(InetSocketAddress givenSaddr) { // Attempt a connection, subsequently create object I/O streams.
+
+	public void attemptConnection(InetSocketAddress givenSaddr) { // Attempt a connection, subsequently create object I/O streams.
 		System.out.println("[attemptConnection] Connect!");
 		if (isConnected()) throw new IllegalStateException("Cannot attempt new connection: connection already established!");
 		final InetSocketAddress saddr;
@@ -90,29 +76,27 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 			saddr = new InetSocketAddress(givenSaddr.getAddress(), givenSaddr.getPort());
 			if (saddr.isUnresolved()) {
 				invokeListeners((l) -> l.connectionException(new Exception(saddr.toString())));
-				return false;
+				return;
 			}
 		} else {
 			saddr = givenSaddr;
 		}
-		try {
-			try (Socket s = new Socket(saddr.getAddress(), saddr.getPort())) {
-				acquireConnection(new NetConnection(this, s, false));
-				invokeListeners((l) -> l.connectionAttained(connection));
-				return true;
-			} catch (ConnectException ex) {
-				ex.printStackTrace();
-				invokeListeners((l) -> l.connectionException(ex));
-			} catch (SocketTimeoutException ex) {
-				ex.printStackTrace();
-				invokeListeners((l) -> l.connectionException(ex));
-			}
+		try (Socket s = new Socket(saddr.getAddress(), saddr.getPort())) {
+			acquireConnection(new NetConnection(this, s, false));
+			invokeListeners((l) -> l.connectionAttained(connection));
+		} catch (ConnectException ex) {
+			ex.printStackTrace();
+			invokeListeners((l) -> l.connectionException(ex));
+		} catch (SocketTimeoutException ex) {
+			ex.printStackTrace();
+			invokeListeners((l) -> l.connectionException(ex));
 		} catch (UnknownHostException e) {
 			e.printStackTrace();
+			invokeListeners((l) -> l.connectionException(e));
 		} catch (IOException e) {
 			e.printStackTrace();
+			invokeListeners((l) -> l.connectionException(e));
 		}
-		return false;
 	}
 	private void acquireConnection(NetConnection c) {
 		System.out.println("[NetworkController.acquireConnection]");
@@ -123,6 +107,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	
 	public boolean attemptDisconnect(boolean locallyInitiated) { // Destroy socket and streams of connection
 		System.out.println("[attemptDisconnect] Disconnect!");
+		/*
 		if (connection == null) throw new IllegalStateException("Connection is null!");
 		if (!connection.isConnected()) throw new IllegalStateException("Connection isn't connected!");
 		
@@ -131,7 +116,7 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 
 		connection.removeListener(this);
 		connection = null;
-		return closedSuccessfully;
+		return closedSuccessfully; */ return false;
 	}
 	public String getStatus() { // Displayed on UI
 		String str = "Inactive";
@@ -150,31 +135,29 @@ public class NetworkController implements NetServer.Listener, NetConnection.List
 	// Connection
 	@Override
 	public void netMessageReceived(NetMessage nm) {
-		System.out.println("NetworkController.NMR: " + nm);
+		System.out.println("[NetworkController.netMessageReceived] " + nm);
+	}
+	@Override
+	public void connectionBegan() {
+		System.out.println("[NetworkController.connectionBegan]");
+	}
+	@Override
+	public void connectionStopped() {
+		System.out.println("[NetworkController.connectionStopped]");
 	}
 	
 	// Server
 	@Override
 	public void connectionReceived(NetConnection c) {
-		System.out.println("[NetworkController.connectionReceived()]");
+		System.out.println("[NetworkController.connectionReceived]");
 		acquireConnection(c);
 	}
 	@Override
 	public void beganListening() {
-		System.out.println("NetworkController.beganListening");
-		try {
-			netFinder.inform();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		System.out.println("[NetworkController.beganListening]");
 	}
 	@Override
 	public void stoppedListening() {
-		System.out.println("NetworkController.stoppedListening");
-		try {
-			netFinder.dispose();
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+		System.out.println("[NetworkController.stoppedListening]");
 	}
 }

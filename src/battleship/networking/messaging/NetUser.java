@@ -1,15 +1,12 @@
 package battleship.networking.messaging;
 
-import java.io.Externalizable;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
+import java.io.Serializable;
 import java.util.Random;
 
 // This class is meant to serve as a unique object to identify individual users (could be multiple users on same device)
 // TODO: Serialize and save between sessions.
 
-public class NetUser implements Externalizable {
+public class NetUser implements Serializable {
 
 	// Should only be used when deserializing
 	public NetUser() { }
@@ -59,20 +56,6 @@ public class NetUser implements Externalizable {
 			return nuo.id == this.id && nuo.name.equals(this.name);
 		};
 		return false;
-	}
-
-	@Override
-	public void writeExternal(ObjectOutput out) throws IOException {
-		out.writeInt(name.length());
-		out.writeChars(name);
-		out.writeInt(id);
-	}
-	@Override
-	public void readExternal(ObjectInput in) throws IOException, ClassNotFoundException {
-		int nameLen = in.readInt();
-		name = "";
-		for (int i=0;i<nameLen;i++) name += in.readChar();
-		id = in.readInt();
 	}
 	
 }

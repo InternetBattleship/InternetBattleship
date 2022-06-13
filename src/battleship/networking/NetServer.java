@@ -7,7 +7,6 @@ import java.net.Socket;
 import java.net.SocketException;
 import java.util.ArrayList;
 
-import battleship.networking.browsing.NetHostInfo;
 import battleship.networking.messaging.NetUser;
 
 public class NetServer {
@@ -47,9 +46,6 @@ public class NetServer {
 		return isListening() ? "Listening at " + getLocalIPString() + ":" + getListenPort() : "Inactive";
 	}
 	
-	private NetHostInfo info = null;
-	public NetHostInfo getInfo() { return info; }
-	
 	public boolean canListen() {
 		return !controller.isConnected();
 	}
@@ -74,7 +70,6 @@ public class NetServer {
 			listening = true;
 			try {
 				server = new ServerSocket(0);
-				info = NetHostInfo.Factory.local(server.getLocalPort(), self);
 				invokeListeners((l) -> l.beganListening());
 				try {
 					System.out.println("[NetServer.listenConcurrently] Accepting...");
