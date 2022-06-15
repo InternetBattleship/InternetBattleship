@@ -1,4 +1,4 @@
-package battleship.networking.messaging;
+package battleship.networking;
 
 import java.io.Serializable;
 import java.util.Random;
