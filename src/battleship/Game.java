@@ -8,11 +8,19 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 
 import javax.swing.JButton;
+import javax.swing.JComboBox;
 import javax.swing.JFrame;
+import javax.swing.JLabel;
 import javax.swing.JOptionPane;
-import javax.swing.JTextField;
+import javax.swing.SwingUtilities;
+
+import battleship.networking.NetConnection;
+import battleship.networking.NetMessage;
+import battleship.networking.NetUser;
 
 public class Game implements ActionListener, MouseListener {
 	
@@ -25,7 +33,8 @@ public class Game implements ActionListener, MouseListener {
 	JButton placeDestroyerB = new JButton("Destroyer(3)");
 	JButton placeSubmarineB = new JButton("Submarine(3)");
 	JButton placePatrolB = new JButton("Patrol Boat(2)");
-	JTextField shipOrientation = new JTextField("North");
+	private static String[] NESW = new String[] { "North","East","South","West" };
+	JComboBox<String> shipOrientation = new JComboBox<>(NESW);
 	Container east = new Container();
 	
 	//west container
@@ -43,11 +52,90 @@ public class Game implements ActionListener, MouseListener {
 	
 	int shipsPlaced = 0;
 	
-	public Game() {
+	private NetConnection con;
+	private boolean receivedAwayShipyard = false;
+	private boolean confirmedHomeShipyard = false;
+	private NetUser turn = null;
+	private JLabel statusLabel = new JLabel("Not initialized");
+	
+	public Game(NetConnection c) {
+		con = c;
+		frame.addWindowListener(new WindowAdapter() {
+			@Override
+			public void windowClosed(WindowEvent e) {
+				con.close();
+			}
+		});
 		frame.setSize(1400, 700);
 		frame.setLayout(new BorderLayout());
 		frame.add(panel, BorderLayout.CENTER);
+		frame.add(statusLabel, BorderLayout.NORTH);
+		constructFrame();
 		
+		frame.setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+		frame.setVisible(true);
+		panel.addMouseListener(this);
+		updateStatus();
+		pollMessages();
+	}
+	
+	private void pollMessages() {
+		frame.repaint();
+		while (con.isActive()) {
+			NetMessage nm = con.receiveMessage();
+			switch (nm.getCategory()) {
+			case GREETING:
+				throw new IllegalStateException("Shouldn't be receiving greeting here!");
+			case MOVE:
+				GameMove m = nm.getMove();
+				panel.recieveShot(m.x, m.y);
+				break;
+			case SHIPYARD:
+				if (receivedAwayShipyard) throw new IllegalStateException("Already received away shipyard!");
+				confirmAwayShipyard(nm.getShipyard());
+				break;
+			default:
+				throw new IllegalArgumentException("Unhandled NetMessage.Category: " + nm.getCategory());
+			}
+			updateStatus();
+			frame.repaint();
+		}
+		System.err.println("Disposed!");
+		frame.dispose();
+	}
+	
+	private void updateStatus() {
+		SwingUtilities.invokeLater(() -> {
+			statusLabel.setText(getStatus());
+		});
+	}
+	private String getStatus() {
+		if (receivedAwayShipyard) {
+			if (confirmedHomeShipyard) {
+				return turn.toString() + "'s turn...";
+			} else {
+				return "Opponent is waiting for you to confirm your shipyard...";
+			}
+		} else {
+			if (confirmedHomeShipyard) {
+				return "Waiting for opponent to confirmed their shipyard...";
+			} else {
+				return "Both players haven't confirmed their shipyards...";
+			}
+		}
+	}
+
+	private void confirmAwayShipyard(Ship[] yard) {
+		receivedAwayShipyard = true;
+		panel.awayShipyard = yard;
+	}
+	
+	private void confirmHomeShipyard() {
+		confirmedHomeShipyard = true;
+		con.sendMessage(NetMessage.Factory.shipyard(panel.homeShipyard));
+	}
+	
+	private void constructFrame() {
 		east.setLayout(new GridLayout(6, 1));
 		placeCarrierB.addActionListener(this);
 		placeBattleShipB.addActionListener(this);
@@ -74,11 +162,6 @@ public class Game implements ActionListener, MouseListener {
 		placeSubmarineB.setBackground(Color.LIGHT_GRAY);
 		placePatrolB.setBackground(Color.LIGHT_GRAY);
 		aimShotB.setBackground(Color.LIGHT_GRAY);
-		
-		frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-		frame.setVisible(true);
-		frame.repaint();
-		panel.addMouseListener(this);
 	}
 
 	@Override
@@ -169,6 +252,8 @@ public class Game implements ActionListener, MouseListener {
 		{
 			GameMove shot = panel.takeShot(e.getX(), e.getY());
 			
+			con.sendMessage(NetMessage.Factory.move(shot));
+			
 			if(shot != null)//also check whose turn it is
 			{
 				frame.repaint();
@@ -196,7 +281,7 @@ public class Game implements ActionListener, MouseListener {
 	public void placeShip(int mouseX, int mouseY, Ship newShip, JButton button)//attempts to place ship on the board
 	{
 		//gets orientation given by user
-		String orientation = shipOrientation.getText();
+		String orientation = (String) shipOrientation.getSelectedItem();
 		
 		//checks if orientation is valid
 		if(orientation.toLowerCase().equals("north") || 
@@ -220,7 +305,7 @@ public class Game implements ActionListener, MouseListener {
 					 * check who's going first. Enables the button for whoever is going first
 					 */
 					
-					
+					confirmHomeShipyard();
 					aimShotB.setEnabled(true);
 					state = NONE;
 				}
@@ -255,6 +340,8 @@ public class Game implements ActionListener, MouseListener {
 	//resets the game
 	public void reset(boolean didWin)
 	{
+		confirmedHomeShipyard = false;
+		receivedAwayShipyard = false;
 		//resets the game and gives a win or loss message
 		if(didWin)
 		{

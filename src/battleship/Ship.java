@@ -2,8 +2,9 @@ package battleship;
 
 import java.awt.Color;
 import java.awt.Graphics;
+import java.io.Serializable;
 
-public class Ship {
+public class Ship implements Serializable{
 	
 	//orientations
 	final int NORTH = 0;

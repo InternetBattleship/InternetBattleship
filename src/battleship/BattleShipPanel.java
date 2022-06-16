@@ -6,7 +6,7 @@ import java.util.ArrayList;
 
 import javax.swing.JPanel;
 
-public class BattleShipPanel extends JPanel{
+public class BattleShipPanel extends JPanel {
 	//constants
 	final char[] BOARD_LABELS = {'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J'};
 	
@@ -16,6 +16,7 @@ public class BattleShipPanel extends JPanel{
 	final int SOUTH = 2;
 	final int WEST = 3;
 		
+	public static final boolean CHEATER_MODE = true;
 	
 	//board variables
 	int boardSize = 400;
@@ -29,28 +30,14 @@ public class BattleShipPanel extends JPanel{
 	int rightBoardY = 100;
 	
 	//shipyard
-	ArrayList<Ship> shipyard = new ArrayList<Ship>();
-	ArrayList<ArrayList<GameMove>> gameBoard = new ArrayList<ArrayList<GameMove>>();
-	ArrayList<ArrayList<GameMove>> opposingBoard = new ArrayList<ArrayList<GameMove>>();
+	int homeShipCount = 0;
+	Ship[] homeShipyard = new Ship[5], awayShipyard = null;
+	ArrayList<GameMove> homeMoves = new ArrayList<GameMove>(),
+			awayMoves = new ArrayList<GameMove>();
 	
 	public BattleShipPanel()
 	{
 		super();
-		
-		//creates empty boards of the correct size
-		for(int i = 0; i < 10; i++)
-		{
-			ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
-			for(int j = 0; j < 10; j++)
-			{
-				blankArray.add(null);
-			}
-			gameBoard.add((ArrayList<GameMove>) blankArray.clone());
-			opposingBoard.add(blankArray);
-		}
-		
-		
-		
 	}
 	
 	public void paintComponent(Graphics g){
@@ -61,58 +48,53 @@ public class BattleShipPanel extends JPanel{
 		drawBoard(rightBoardX, rightBoardY, g);
 		
 		//draw ships
-		for (int i = 0; i < shipyard.size(); i++) 
+		for (int i = 0; i < homeShipCount; i++) 
 		{
-			shipyard.get(i).drawMe(rightBoardX, rightBoardY, boardSize, g);
+			homeShipyard[i].drawMe(rightBoardX, rightBoardY, boardSize, g);
+		}
+		if (CHEATER_MODE && awayShipyard != null) {
+			for (int i = 0; i < awayShipyard.length; i++) 
+			{
+				Ship s = awayShipyard[i];
+				if (s != null) s.drawMe(leftBoardX, leftBoardY, boardSize, g);
+			}
 		}
 		
 		//draw moves
-		for(int i = 0; i < 10; i++)
-		{
-			for(int j = 0; j < 10; j++)
+		for (GameMove awayMove : awayMoves) {
+			int i = awayMove.x, j = awayMove.y;
+			if(awayMove.getHit()) //draw a hit
 			{
-				//opposing player's board
-				if(opposingBoard.get(i).get(j) != null)
-				{
-					if(opposingBoard.get(i).get(j).getHit())//draw a hit
-					{
-						//draws an x
-						g.setColor(Color.RED);
-						g.drawLine(leftBoardX + ((boardSize/10) * i), leftBoardY + ((boardSize/10) * j), (leftBoardX + ((boardSize/10) * (i +1))), leftBoardY + ((boardSize/10) * (j+1)));
-						g.drawLine(leftBoardX + ((boardSize/10) * (i + 1)), leftBoardY + ((boardSize/10) * j), (leftBoardX + ((boardSize/10) * i)), leftBoardY + ((boardSize/10) * (j+1)));
-					}
-					else//draw a miss
-					{
-						//draws a circle
-						g.setColor(Color.black);
-						g.drawOval(leftBoardX + ((boardSize/10) * i), leftBoardY + ((boardSize/10) * j), (boardSize/10), (boardSize/10));
-					}
-				}
-				
-				//player's board
-				if(gameBoard.get(i).get(j) != null)
-				{
-					if(gameBoard.get(i).get(j).getHit())//draw a hit
-					{
-						//draws an x
-						g.setColor(Color.RED);
-						g.drawLine(rightBoardX + ((boardSize/10) * i), rightBoardY + ((boardSize/10) * j), (rightBoardX + ((boardSize/10) * (i +1))), rightBoardY + ((boardSize/10) * (j+1)));
-						g.drawLine(rightBoardX + ((boardSize/10) * (i + 1)), rightBoardY + ((boardSize/10) * j), (rightBoardX + ((boardSize/10) * i)), rightBoardY + ((boardSize/10) * (j+1)));
-					}
-					else//draw a miss
-					{
-						//draws a circle
-						g.setColor(Color.black);
-						g.drawOval(rightBoardX + ((boardSize/10) * i), rightBoardY + ((boardSize/10) * j), (boardSize/10), (boardSize/10));
-					}
-				}
+				//draws an x
+				g.setColor(Color.RED);
+				g.drawLine(leftBoardX + ((boardSize/10) * i), leftBoardY + ((boardSize/10) * j), (leftBoardX + ((boardSize/10) * (i +1))), leftBoardY + ((boardSize/10) * (j+1)));
+				g.drawLine(leftBoardX + ((boardSize/10) * (i + 1)), leftBoardY + ((boardSize/10) * j), (leftBoardX + ((boardSize/10) * i)), leftBoardY + ((boardSize/10) * (j+1)));
+			}
+			else//draw a miss
+			{
+				//draws a circle
+				g.setColor(Color.black);
+				g.drawOval(leftBoardX + ((boardSize/10) * i), leftBoardY + ((boardSize/10) * j), (boardSize/10), (boardSize/10));
+			}
+		}
+		for (GameMove homeMove : homeMoves) {
+			int i = homeMove.x, j = homeMove.y;
+			if(homeMove.getHit())//draw a hit
+			{
+				//draws an x
+				g.setColor(Color.RED);
+				g.drawLine(rightBoardX + ((boardSize/10) * i), rightBoardY + ((boardSize/10) * j), (rightBoardX + ((boardSize/10) * (i +1))), rightBoardY + ((boardSize/10) * (j+1)));
+				g.drawLine(rightBoardX + ((boardSize/10) * (i + 1)), rightBoardY + ((boardSize/10) * j), (rightBoardX + ((boardSize/10) * i)), rightBoardY + ((boardSize/10) * (j+1)));
+			}
+			else//draw a miss
+			{
+				//draws a circle
+				g.setColor(Color.black);
+				g.drawOval(rightBoardX + ((boardSize/10) * i), rightBoardY + ((boardSize/10) * j), (boardSize/10), (boardSize/10));
 			}
 		}
 		g.setColor(Color.black);
 	}
-	
-	//draws a move
-	
 	
 	//draws a playing board
 	public void drawBoard(int x, int y, Graphics g)
@@ -186,7 +168,8 @@ public class BattleShipPanel extends JPanel{
 					newShip.setX(boardX);
 					newShip.setY(boardY);
 					newShip.setOrientation(newOrientation);
-					shipyard.add(newShip);
+					homeShipyard[homeShipCount] = newShip;
+					homeShipCount++;
 					return true;
 				}
 				
@@ -205,12 +188,12 @@ public class BattleShipPanel extends JPanel{
 	{
 		int boardX = ((x - leftBoardX)/(boardSize/10));
 		int boardY = ((y - leftBoardY)/(boardSize/10));
-		
+
+		GameMove move = new GameMove(boardX, boardY);
 		//note, currently this function checks the players own board for testing, this will not be the case in final version
-		if(boardX < 10 && boardX >= 0 && boardY < 10 && boardY >= 0 && opposingBoard.get(boardX).get(boardY) == null)
+		if(boardX < 10 && boardX >= 0 && boardY < 10 && boardY >= 0 && moveAvailable(awayMoves, move))
 		{
 			//make gamemove
-			GameMove move = new GameMove(boardX, boardY);
 			
 			
 			//**************************************
@@ -220,7 +203,7 @@ public class BattleShipPanel extends JPanel{
 			
 			
 			//places move on board
-			opposingBoard.get(boardX).set(boardY, move);
+			homeMoves.add(move);
 			if(move.getWin())
 			{
 				System.out.println("Game Over");
@@ -275,8 +258,9 @@ public class BattleShipPanel extends JPanel{
 		
 		//adds move to gameboard
 		GameMove move = new GameMove(x, y);
+		if (moveExists(awayMoves, move)) throw new IllegalStateException("Opponent already made move: " + x +", " + y);
 		move.setResponse(out);
-		gameBoard.get(x).set(y, move);
+		homeMoves.add(move);
 		
 		//returns response
 		return out;
@@ -284,9 +268,9 @@ public class BattleShipPanel extends JPanel{
 	
 	public boolean isIntersecting(Ship shipOne, int x, int y, int orientation)//checks if a ship at given location will intersect with any other ship
 	{
-		for(int a = 0; a < shipyard.size(); a++)//runs through all ships on the board
+		for(int a = 0; a < homeShipCount; a++)//runs through all ships on the board
 		{	
-			Ship shipTwo = shipyard.get(a);
+			Ship shipTwo = homeShipyard[a];
 			
 			//arrays for holding all the coordinates the ships are on
 			int[] shipOneX = new int[shipOne.getLength()];
@@ -376,16 +360,17 @@ public class BattleShipPanel extends JPanel{
 	//checks if there is a ship at the given x and y coords
 	public Ship checkForShip(int x, int y)
 	{
-		for(int i = 0; i < shipyard.size(); i++)
+		for(int i = 0; i < homeShipCount; i++)
 		{
-			ArrayList<int[]> shipCoords = getShipCoords(shipyard.get(i));
+			Ship s = homeShipyard[i];
+			ArrayList<int[]> shipCoords = getShipCoords(s);
 			
 			//goes through every space any ship occupies and sees if any match the given coords
-			for(int j = 0; j < shipyard.get(i).getLength(); j++)
+			for(int j = 0; j < s.getLength(); j++)
 			{
 				if(shipCoords.get(0)[j] == x && shipCoords.get(1)[j] == y)
 				{
-					return(shipyard.get(i));
+					return s;
 				}
 			}
 		}
@@ -395,9 +380,9 @@ public class BattleShipPanel extends JPanel{
 	//checks if the player has lost
 	public boolean checkLoss()
 	{
-		for(int i = 0; i < shipyard.size(); i++)
+		for(int i = 0; i < 5; i++)
 		{
-			if(!shipyard.get(i).hasSunk)
+			if(!homeShipyard[i].hasSunk)
 			{
 				//if any of the ships haven't sunk returns false
 				return false;
@@ -409,22 +394,23 @@ public class BattleShipPanel extends JPanel{
 	//resets the boards
 	public void resetBoard()
 	{
-		shipyard = new ArrayList<Ship>();
+		homeShipyard = new Ship[5];
+		homeShipCount = 0;
+		awayShipyard = null;
 		
-		opposingBoard = new ArrayList<ArrayList<GameMove>>();
-		gameBoard = new ArrayList<ArrayList<GameMove>>();
-		
-		//creates empty boards of the correct size
-		for(int i = 0; i < 10; i++)
-		{
-			ArrayList<GameMove> blankArray = new ArrayList<GameMove>();
-			for(int j = 0; j < 10; j++)
-			{
-				blankArray.add(null);
-			}
-			gameBoard.add((ArrayList<GameMove>) blankArray.clone());
-			opposingBoard.add(blankArray);
+		awayMoves = new ArrayList<GameMove>();
+		homeMoves = new ArrayList<GameMove>();
+	}
+	
+	public boolean moveAvailable(ArrayList<GameMove> arr, GameMove m) {
+		return !moveExists(arr, m);
+	}
+	
+	public boolean moveExists(ArrayList<GameMove> arr, GameMove m) {
+		for (GameMove a : arr) {
+			if (a.x == m.x && a.y == m.y) return true;
 		}
+		return false;
 	}
 	
 }

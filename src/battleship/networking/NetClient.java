@@ -17,11 +17,13 @@ import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JTextField;
 
+import battleship.networking.NetMessage.Category;
+
 public class NetClient {
 
 	// UI
 	private JFrame frame = new JFrame(), pFrame = null;
-	private JTextField ipField = new JTextField(16), portField = new JTextField(7);
+	private JTextField ipField = new JTextField("localhost", 16), portField = new JTextField(7);
 	private JButton connectBtn = new JButton("Connect");
 	
 	// Misc
@@ -75,12 +77,24 @@ public class NetClient {
 			Socket s = new Socket();
 			InetSocketAddress isa = new InetSocketAddress(ipVal, port);
 			s.connect(isa);
-			new NetConnection(s, true, frame);
+			attemptConnection(s);
 		} catch (IOException ex) {
 			ex.printStackTrace();
 			displayError(ex.getMessage());
 		}
 	};
+	
+	private void attemptConnection(Socket s) {
+		SocketStreams sock = new SocketStreams(s, self);
+		sock.sendObject(NetMessage.Factory.greeting(self));
+		final NetMessage nm = sock.receiveMessage();
+		if (nm.getCategory() != Category.GREETING) {
+			displayError("Protocol error: Server didn't begin with greeting message!");
+			sock.close();
+			return;
+		}
+		new Thread(() -> new NetConnection(sock, false, frame)).start();
+	}
 	
 	private void displayError(String msg) {
 		JOptionPane.showMessageDialog(frame, msg, "Error",

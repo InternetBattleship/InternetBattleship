@@ -1,6 +1,8 @@
 package battleship;
 
-public class GameMove {
+import java.io.Serializable;
+
+public class GameMove implements Serializable {
 	
 	
 	boolean hit = false;

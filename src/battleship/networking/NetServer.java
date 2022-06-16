@@ -15,8 +15,11 @@ import javax.swing.BoxLayout;
 import javax.swing.JButton;
 import javax.swing.JFrame;
 import javax.swing.JLabel;
+import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
+
+import battleship.networking.NetMessage.Category;
 
 public class NetServer {
 
@@ -66,10 +69,12 @@ public class NetServer {
 		updateState();
 	}
 	
+	private static Color INACTIVE = new Color(127,0,0), ACTIVE = new Color(0,127,0);
+	
 	private void updateState() {
 		SwingUtilities.invokeLater(() -> {
 			statusLabel.setText(listening ? getServerStatus() : "Not listening");
-			statusLabel.setForeground(listening ? Color.GREEN : Color.RED);
+			statusLabel.setForeground(listening ? ACTIVE : INACTIVE);
 			
 			closeBtn.setEnabled(listening);
 			listenBtn.setEnabled(!listening);
@@ -127,7 +132,7 @@ public class NetServer {
 			updateState();
 			Socket s = server.accept();
 			listening = false;
-			new NetConnection(s, true, frame);
+			promptApproval(s);
 		} catch (SocketException e) {
 			if (e.getMessage().equals("Socket closed")) {
 				System.out.println("Socket closed normally");
@@ -140,5 +145,31 @@ public class NetServer {
 		server = null;
 		updateState();
 	};
+	
+	private static String[] acceptDeny = new String[] { "Accept", "Deny" };
+	
+	private void promptApproval(Socket s) {
+		SocketStreams sock = new SocketStreams(s, self);
+		final NetMessage nm = sock.receiveMessage();
+		if (nm.getCategory() != Category.GREETING) {
+			JOptionPane.showMessageDialog(frame, "Protocol error: Client didn't begin with greeting message!", "Error", JOptionPane.ERROR_MESSAGE);
+			sock.close();
+			return;
+		}
+		int n = JOptionPane.showOptionDialog(frame,
+			"Accept request from " + nm.getGreeting(),
+			"Client request?",
+			JOptionPane.YES_NO_OPTION,
+			JOptionPane.QUESTION_MESSAGE,
+			null,
+			acceptDeny,
+			acceptDeny[0]);
+		if (n==0) {
+			sock.sendObject(NetMessage.Factory.greeting(self));
+			new NetConnection(sock, true, frame);
+		} else {
+			sock.close();
+		}
+	}
 	
 }
